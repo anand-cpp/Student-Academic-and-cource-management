@@ -1,0 +1,7 @@
+export { LoginPage } from './LoginPage'
+export { DashboardPage } from './DashboardPage'
+export { StudentsPage } from './StudentsPage'
+export { StudentDetailPage } from './StudentDetailPage'
+export { FacultyPage } from './FacultyPage'
+export { CoursesPage } from './CoursesPage'
+export { EnrollmentsPage, AttendancePage, AssessmentsPage, MarksPage, ReportsPage, SettingsPage } from './OtherPages'
