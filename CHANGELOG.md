@@ -37,7 +37,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 
 ### Fixed
-- N/A
+- Frontend white screen issue: Added missing Tailwind v4 animation keyframes (animate-spin, animate-slide-in)
+- TypeScript errors in CoursesPage, StudentsPage, FacultyPage (duplicate variable declarations)
+- Import path issues: Updated all page components to use path aliases (@/, @components/, @services/, @contexts/, @types/)
+- Vite config: Fixed __dirname usage for ES module compatibility
+- Tailwind v4 migration: Updated PostCSS config, package.json, and index.css syntax
+- Backend H2 configuration: Added local profile with in-memory database for development
+- JWT secret property name mismatch in JwtUtil
 
 ### Security
 - JWT authentication with BCrypt password hashing
@@ -81,7 +87,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 
 ### Fixed
-- N/A
+- Frontend white screen issue: Added missing Tailwind v4 animation keyframes (animate-spin, animate-slide-in)
+- TypeScript errors in CoursesPage, StudentsPage, FacultyPage (duplicate variable declarations)
+- Import path issues: Updated all page components to use path aliases (@/, @components/, @services/, @contexts/, @types/)
+- Vite config: Fixed __dirname usage for ES module compatibility
+- Tailwind v4 migration: Updated PostCSS config, package.json, and index.css syntax
+- Backend H2 configuration: Added local profile with in-memory database for development
+- JWT secret property name mismatch in JwtUtil
 
 ### Security
 - JWT token authentication with 24h access / 7d refresh tokens
