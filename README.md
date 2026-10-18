@@ -2,17 +2,17 @@
 
 A comprehensive Student Academic and Course Management System built with Java Spring Boot (backend) and React TypeScript (frontend), demonstrating Object-Oriented Programming concepts, JDBC database connectivity, and modern web development practices.
 
-## 🎯 Project Overview
+## Project Overview
 
 This system manages student academic records, course information, faculty details, enrollments, attendance, assessments, and grades. It demonstrates core OOP principles including encapsulation, inheritance, abstraction, polymorphism, and design patterns.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React + TS    │────▶│  Spring Boot    │────▶│    MySQL 8.0    │
-│   Frontend      │     │  Backend API    │     │   Database      │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
++------------------+      +------------------+      +------------------+
+|  React + TS      |----->|  Spring Boot     |----->|  H2 / MySQL 8.0  |
+|  Frontend        |      |  Backend API     |      |  Database        |
++------------------+      +------------------+      +------------------+
 ```
 
 ### Backend (Spring Boot 3.3.2 + Java 21)
@@ -26,27 +26,26 @@ This system manages student academic records, course information, faculty detail
 - **React Router** for navigation
 - **TanStack Query** for server state management
 - **React Hook Form + Zod** for form validation
-- **Tailwind CSS** for styling
+- **Tailwind CSS v4** for styling
 - **Heroicons** for icons
 
-### Database (MySQL 8.0)
+### Database (H2 for local dev / MySQL 8.0 for production)
 - Normalized schema with proper relationships
 - Foreign key constraints and indexes
 - Audit logging support
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Java 21+
 - Node.js 18+
-- MySQL 8.0+
 - Maven 3.9+
+- MySQL 8.0+ (optional, for production)
 
 ### Backend Setup
 ```bash
 cd backend
-# Configure database in src/main/resources/application.yml
-# Set DB_USERNAME and DB_PASSWORD environment variables
+# Uses H2 in-memory database by default (local profile)
 ./mvnw spring-boot:run
 ```
 
@@ -54,17 +53,16 @@ cd backend
 ```bash
 cd frontend
 npm install
-# Create .env file with VITE_API_URL=http://localhost:8080/api
 npm run dev
 ```
 
-### Database Setup
+### Database Setup (Production)
 ```sql
 CREATE DATABASE student_academic_db;
 -- Run migrations from backend/src/main/resources/db/migration/
 ```
 
-## 📚 Features
+## Features
 
 ### Student Management
 - CRUD operations for student records
@@ -103,52 +101,57 @@ CREATE DATABASE student_academic_db;
 - Attendance reports
 - Course results and grade distributions
 
-## 🔐 Security
+## Security
 - JWT-based authentication
 - Role-based access control (Admin, Faculty, Student, Department Head, Registrar)
 - Password hashing with BCrypt
 - CORS configuration
 - Input validation and sanitization
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 student-academic-management/
-├── backend/
-│   ├── src/main/java/com/studentmgmt/
-│   │   ├── config/          # Configuration classes
-│   │   ├── controller/      # REST controllers
-│   │   ├── dto/             # Data Transfer Objects
-│   │   ├── exception/       # Custom exceptions
-│   │   ├── model/           # JPA entities
-│   │   ├── repository/      # Data access layer
-│   │   ├── security/        # Security configuration
-│   │   ├── service/         # Business logic
-│   │   └── util/            # Utility classes
-│   └── src/main/resources/
-│       ├── db/migration/    # SQL migrations
-│       └── application.yml  # Configuration
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   ├── contexts/        # React contexts
-│   │   ├── hooks/           # Custom hooks
-│   │   ├── pages/           # Page components
-│   │   ├── services/        # API services
-│   │   ├── types/           # TypeScript types
-│   │   └── contexts/        # React contexts
-│   └── package.json
-│
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── DATABASE.md
-    ├── API.md
-    ├── OOP-CONCEPTS.md
-    └── DEMO-GUIDE.md
++-- backend/
+|   +-- src/main/java/com/studentmgmt/
+|   |   +-- config/          # Configuration classes
+|   |   +-- controller/      # REST controllers
+|   |   +-- dto/             # Data Transfer Objects
+|   |   +-- exception/       # Custom exceptions
+|   |   +-- model/           # JPA entities
+|   |   +-- repository/      # Data access layer
+|   |   +-- security/        # Security configuration
+|   |   +-- service/         # Business logic
+|   |   +-- util/            # Utility classes
+|   +-- src/main/resources/
+|       +-- db/migration/    # SQL migrations
+|       +-- application.yml  # Configuration
++-- frontend/
+|   +-- src/
+|   |   +-- components/      # Reusable UI components
+|   |   +-- contexts/        # React contexts
+|   |   +-- hooks/           # Custom hooks
+|   |   +-- pages/           # Page components
+|   |   +-- services/        # API services
+|   |   +-- types/           # TypeScript types
+|   +-- package.json
++-- docs/
+    +-- ARCHITECTURE.md
+    +-- DATABASE.md
+    +-- API.md
+    +-- OOP-CONCEPTS.md
+    +-- DEMO-GUIDE.md
 ```
 
-## 🧪 Testing
+## Demo Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin | password123 | ADMIN |
+| prof.smith | password123 | FACULTY |
+| student001 | password123 | STUDENT |
+
+## Testing
 ```bash
 # Backend tests
 cd backend && ./mvnw test
@@ -157,7 +160,7 @@ cd backend && ./mvnw test
 cd frontend && npm test
 ```
 
-## 📦 Deployment
+## Deployment
 ```bash
 # Backend JAR
 cd backend && ./mvnw package -DskipTests
@@ -168,17 +171,17 @@ cd frontend && npm run build
 # Deploy dist/ folder to static hosting
 ```
 
-## 🤝 Contributing
+## Contributing
 1. Fork the repository
 2. Create a feature branch
 3. Commit your changes
 4. Push to the branch
 5. Open a Pull Request
 
-## 📄 License
+## License
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 - Spring Boot team for the excellent framework
 - React team for the frontend library
 - Tailwind CSS for the utility-first CSS framework
