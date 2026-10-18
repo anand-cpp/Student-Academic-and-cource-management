@@ -1,6 +1,34 @@
 # Demo Guide
 
-## Quick Demo Setup
+## Quick Demo Setup (Local Development with H2)
+
+### Prerequisites
+- Java 21+
+- Node.js 18+
+- Maven 3.9+
+- **No MySQL required** - Uses H2 in-memory database by default
+
+### 1. Backend Startup (H2 In-Memory Database)
+```bash
+cd backend
+# Uses H2 in-memory database by default (local profile)
+./mvnw spring-boot:run
+```
+Backend runs on: `http://localhost:8080/api`
+- Swagger UI: `http://localhost:8080/api/swagger-ui.html`
+- H2 Console: `http://localhost:8080/api/h2-console` (JDBC: `jdbc:h2:mem:student_academic_db`, user: `sa`, password: empty)
+
+### 2. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Frontend runs on: `http://localhost:5173`
+
+---
+
+## Production Setup (MySQL 8.0)
 
 ### Prerequisites
 - Java 21+
@@ -13,19 +41,20 @@
 # Create database
 mysql -u root -p -e "CREATE DATABASE student_academic_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# Run migrations (automatic on backend startup)
+# Run migrations (automatic on backend startup with dev profile)
 # Or manually:
 mysql -u root -p student_academic_db < backend/src/main/resources/db/migration/schema.sql
 mysql -u root -p student_academic_db < backend/src/main/resources/db/migration/data.sql
 ```
 
-### 2. Backend Startup
+### 2. Backend Startup (MySQL)
 ```bash
 cd backend
 # Set environment variables
 export DB_USERNAME=root
 export DB_PASSWORD=your_password
 export JWT_SECRET=your-secret-key-min-32-chars
+export SPRING_PROFILES_ACTIVE=dev
 
 # Run
 ./mvnw spring-boot:run
@@ -278,9 +307,8 @@ Open: `http://localhost:8080/api/swagger-ui.html`
 
 ### Backend Won't Start
 1. Check Java version: `java -version` (needs 21+)
-2. Check MySQL running: `systemctl status mysql`
-3. Check database credentials in `application.yml`
-4. Check port 8080 available: `netstat -an | grep 8080`
+2. Check port 8080 available: `netstat -an | grep 8080`
+3. Check logs: `backend/logs/student-academic-management.log`
 
 ### Frontend Build Issues
 ```bash
@@ -289,14 +317,6 @@ cd frontend && rm -rf node_modules package-lock.json && npm install
 
 # Check Node version
 node --version  # Needs 18+
-```
-
-### Database Issues
-```bash
-# Reset database
-mysql -u root -p -e "DROP DATABASE student_academic_db; CREATE DATABASE student_academic_db;"
-
-# Re-run migrations (auto on backend restart)
 ```
 
 ### Port Conflicts
@@ -310,6 +330,12 @@ server:
 # frontend/vite.config.ts
 server: { port: 3000 }
 ```
+
+### H2 Console Access
+- URL: `http://localhost:8080/api/h2-console`
+- JDBC URL: `jdbc:h2:mem:student_academic_db`
+- Username: `sa`
+- Password: (empty)
 
 ---
 
@@ -331,11 +357,9 @@ server: { port: 3000 }
 6. **Grades** (2 min) - Enter marks, view results
 7. **Reports** (2 min) - Generate reports
 
----
-
-## Reset for Next Demo
+### Reset for Next Demo
 ```bash
-# Quick reset
-cd backend && ./mvnw flyway:clean flyway:migrate
+# Quick reset (H2 is in-memory, just restart backend)
+cd backend && ./mvnw spring-boot:run
 cd ../frontend && npm run dev
 ```
