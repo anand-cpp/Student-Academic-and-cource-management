@@ -8,6 +8,7 @@ import { StudentDetailPage } from './pages/StudentDetailPage'
 import { FacultyPage } from './pages/FacultyPage'
 import { CoursesPage } from './pages/CoursesPage'
 import { LoadingSpinner } from './components/ui/LoadingSpinner'
+import { ToastProvider } from './components/ui/Toast'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth()
@@ -39,24 +40,26 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="students" element={<StudentsPage />} />
-        <Route path="students/:id" element={<StudentDetailPage />} />
-        <Route path="faculty" element={<FacultyPage />} />
-        <Route path="courses" element={<CoursesPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <ToastProvider>
+      <Routes>
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<DashboardPage />} />
+          <Route path="students" element={<StudentsPage />} />
+          <Route path="students/:id" element={<StudentDetailPage />} />
+          <Route path="faculty" element={<FacultyPage />} />
+          <Route path="courses" element={<CoursesPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </ToastProvider>
   )
 }
 
