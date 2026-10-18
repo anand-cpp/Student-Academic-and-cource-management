@@ -18,13 +18,13 @@ import java.util.function.Function;
 @Slf4j
 public class JwtUtil {
 
-    @Value("${spring.security.jwt.secret}")
+    @Value("${security.jwt.secret}")
     private String secret;
 
-    @Value("${spring.security.jwt.expiration}")
+    @Value("${security.jwt.expiration}")
     private long jwtExpiration;
 
-    @Value("${spring.security.jwt.refresh-expiration}")
+    @Value("${security.jwt.refresh-expiration}")
     private long refreshExpiration;
 
     public String extractUsername(String token) {
