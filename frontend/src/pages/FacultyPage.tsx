@@ -1,17 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { facultyApi } from '../../services/faculty'
-import { departmentsApi } from '../../services/departments'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { Select } from '../../components/ui/Select'
-import { Table } from '../../components/ui/Table'
-import { Badge } from '../../components/ui/Badge'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { PaginatedResponse, Faculty, FacultyStatus, Department } from '../../types'
+import { facultyApi } from '@services/faculty'
+import { departmentsApi } from '@services/departments'
+import { Card, Button, Input, Select, Table, Badge, LoadingSpinner, useToast, TablePagination } from '@/components/ui'
+import { PaginatedResponse, Faculty, FacultyStatus, Department } from '@/types'
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
-import { useToast } from '../../components/ui/Toast'
 
 export function FacultyPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,6 +19,7 @@ export function FacultyPage() {
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
   const departmentId = searchParams.get('departmentId') || ''
+  const [searchValue, setSearchValue] = useState(search)
 
   const fetchFaculty = async () => {
     setLoading(true)
@@ -59,15 +53,18 @@ export function FacultyPage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setSearchParams({ ...Object.fromEntries(searchParams), search, page: 0 })
+    const params = new URLSearchParams(searchParams)
+    params.set('search', searchValue)
+    params.set('page', '0')
+    setSearchParams(params)
   }
 
   const handleFilterChange = (key: string, value: string) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (value) newParams.set(key, value)
-    else newParams.delete(key)
-    newParams.set('page', '0')
-    setSearchParams(newParams)
+    const params = new URLSearchParams(searchParams)
+    if (value) params.set(key, value)
+    else params.delete(key)
+    params.set('page', '0')
+    setSearchParams(params)
   }
 
   const clearFilters = () => setSearchParams({})
@@ -109,12 +106,12 @@ export function FacultyPage() {
       </div>
 
       <Card className="p-4">
-        <form onSubmit={(e) => { e.preventDefault(); setSearchParams({ ...Object.fromEntries(searchParams), search, page: 0 }) }} className="flex flex-col sm:flex-row gap-4">
+        <form onSubmit={(e) => { e.preventDefault(); const params = new URLSearchParams(searchParams); params.set('search', searchValue); params.set('page', '0'); setSearchParams(params) }} className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="search" placeholder="Search faculty..." value={search} onChange={(e) => setSearch(e.target.value)} className="input pl-10" />
+            <input type="search" placeholder="Search faculty..." value={searchValue} onChange={(e) => setSearchValue(e.target.value)} className="input pl-10" />
           </div>
-          <Select options={statusOptions} value={status} onChange={(e) => { setSearch(e.target.value); handleFilterChange('status', e.target.value) }} placeholder="All Statuses" className="w-40" />
+          <Select options={statusOptions} value={status} onChange={(e) => handleFilterChange('status', e.target.value)} placeholder="All Statuses" className="w-40" />
           <Select options={designationOptions} value={searchParams.get('designation') || ''} onChange={(e) => handleFilterChange('designation', e.target.value)} placeholder="All Designations" className="w-48" />
           <Select options={departmentOptions} value={departmentId} onChange={(e) => handleFilterChange('departmentId', e.target.value)} placeholder="All Departments" className="w-48" />
           {(search || status || departmentId) && <Button type="button" variant="ghost" onClick={() => setSearchParams({})}><ArrowPathIcon className="w-5 h-5 mr-2" /> Clear</Button>}
@@ -156,7 +153,4 @@ function getFacultyStatusVariant(status: FacultyStatus): 'success' | 'warning' |
   }
 }
 
-let search = ''
-function setSearch(value: string) { search = value }
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
-import { TablePagination } from '../../components/ui/Table'
+// Duplicate code removed
