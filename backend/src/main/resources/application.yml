@@ -17,6 +17,31 @@ spring:
     deserialization:
       adjust-dates-to-context-time-zone: false
 
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/migration/schema-h2.sql
+      data-locations: classpath:db/migration/data-h2.sql
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
 # Common HikariCP configuration
 datasource:
   hikari:
@@ -39,7 +64,7 @@ jpa:
 # Security
 security:
   jwt:
-    secret: ${JWT_SECRET:studentAcademicManagementSecretKey2024!@#$%^&*()}
+    secret: ${JWT_SECRET:studentAcademicManagementSecretKey2024!@#$%^&*()SuperLongSecretKeyForHS256AlgorithmMustBeAtLeast256BitsLongEnoughForHS256AndEvenMoreCharactersToMakeItDefinitely32BytesOrMoreEvenLongerToBeAbsolutelySureItIs32BytesOrMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMoreAndEvenMore}
     expiration: 86400000 # 24 hours
     refresh-expiration: 604800000 # 7 days
 

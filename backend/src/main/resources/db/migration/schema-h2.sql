@@ -33,10 +33,10 @@ CREATE TABLE IF NOT EXISTS users (
     FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 );
 
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_role ON users(role_id);
-CREATE INDEX idx_users_active ON users(is_active);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role_id);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(is_active);
 
 -- =====================================================================
 -- DEPARTMENTS (created before faculty due to FK from faculty to departments)
@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS departments (
     PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_departments_code ON departments(code);
-CREATE INDEX idx_departments_active ON departments(is_active);
+CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
+CREATE INDEX IF NOT EXISTS idx_departments_active ON departments(is_active);
 
 -- =====================================================================
 -- FACULTY (must be after departments due to FK to departments)
@@ -80,10 +80,10 @@ CREATE TABLE IF NOT EXISTS faculty (
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
 );
 
-CREATE INDEX idx_faculty_faculty_id ON faculty(faculty_id);
-CREATE INDEX idx_faculty_department ON faculty(department_id);
-CREATE INDEX idx_faculty_status ON faculty(status);
-CREATE INDEX idx_faculty_designation ON faculty(designation);
+CREATE INDEX IF NOT EXISTS idx_faculty_faculty_id ON faculty(faculty_id);
+CREATE INDEX IF NOT EXISTS idx_faculty_department ON faculty(department_id);
+CREATE INDEX IF NOT EXISTS idx_faculty_status ON faculty(status);
+CREATE INDEX IF NOT EXISTS idx_faculty_designation ON faculty(designation);
 
 -- =====================================================================
 -- DEPARTMENTS FOREIGN KEY (added after faculty table exists)
@@ -117,11 +117,11 @@ CREATE TABLE IF NOT EXISTS students (
     FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE RESTRICT
 );
 
-CREATE INDEX idx_students_student_id ON students(student_id);
-CREATE INDEX idx_students_department ON students(department_id);
-CREATE INDEX idx_students_status ON students(status);
-CREATE INDEX idx_students_admission_year ON students(admission_year);
-CREATE INDEX idx_students_semester ON students(current_semester);
+CREATE INDEX IF NOT EXISTS idx_students_student_id ON students(student_id);
+CREATE INDEX IF NOT EXISTS idx_students_department ON students(department_id);
+CREATE INDEX IF NOT EXISTS idx_students_status ON students(status);
+CREATE INDEX IF NOT EXISTS idx_students_admission_year ON students(admission_year);
+CREATE INDEX IF NOT EXISTS idx_students_semester ON students(current_semester);
 
 -- =====================================================================
 -- COURSES
@@ -148,12 +148,12 @@ CREATE TABLE IF NOT EXISTS courses (
     FOREIGN KEY (faculty_id) REFERENCES faculty(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_courses_code ON courses(course_code);
-CREATE INDEX idx_courses_department ON courses(department_id);
-CREATE INDEX idx_courses_semester ON courses(semester);
-CREATE INDEX idx_courses_faculty ON courses(faculty_id);
-CREATE INDEX idx_courses_status ON courses(status);
-CREATE INDEX idx_courses_academic_year ON courses(academic_year);
+CREATE INDEX IF NOT EXISTS idx_courses_code ON courses(course_code);
+CREATE INDEX IF NOT EXISTS idx_courses_department ON courses(department_id);
+CREATE INDEX IF NOT EXISTS idx_courses_semester ON courses(semester);
+CREATE INDEX IF NOT EXISTS idx_courses_faculty ON courses(faculty_id);
+CREATE INDEX IF NOT EXISTS idx_courses_status ON courses(status);
+CREATE INDEX IF NOT EXISTS idx_courses_academic_year ON courses(academic_year);
 
 -- =====================================================================
 -- ENROLLMENTS
@@ -176,10 +176,10 @@ CREATE TABLE IF NOT EXISTS enrollments (
     UNIQUE (student_id, course_id)
 );
 
-CREATE INDEX idx_enrollments_student ON enrollments(student_id);
-CREATE INDEX idx_enrollments_course ON enrollments(course_id);
-CREATE INDEX idx_enrollments_status ON enrollments(status);
-CREATE INDEX idx_enrollments_date ON enrollments(enrollment_date);
+CREATE INDEX IF NOT EXISTS idx_enrollments_student ON enrollments(student_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_course ON enrollments(course_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_status ON enrollments(status);
+CREATE INDEX IF NOT EXISTS idx_enrollments_date ON enrollments(enrollment_date);
 
 -- =====================================================================
 -- ATTENDANCE SESSIONS
@@ -203,9 +203,9 @@ CREATE TABLE IF NOT EXISTS attendance_sessions (
     UNIQUE (course_id, session_date, session_number)
 );
 
-CREATE INDEX idx_sessions_course ON attendance_sessions(course_id);
-CREATE INDEX idx_sessions_date ON attendance_sessions(session_date);
-CREATE INDEX idx_sessions_cancelled ON attendance_sessions(is_cancelled);
+CREATE INDEX IF NOT EXISTS idx_sessions_course ON attendance_sessions(course_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_date ON attendance_sessions(session_date);
+CREATE INDEX IF NOT EXISTS idx_sessions_cancelled ON attendance_sessions(is_cancelled);
 
 -- =====================================================================
 -- ATTENDANCE RECORDS
@@ -227,9 +227,9 @@ CREATE TABLE IF NOT EXISTS attendance_records (
     UNIQUE (session_id, enrollment_id)
 );
 
-CREATE INDEX idx_attendance_session ON attendance_records(session_id);
-CREATE INDEX idx_attendance_enrollment ON attendance_records(enrollment_id);
-CREATE INDEX idx_attendance_status ON attendance_records(status);
+CREATE INDEX IF NOT EXISTS idx_attendance_session ON attendance_records(session_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_enrollment ON attendance_records(enrollment_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_status ON attendance_records(status);
 
 -- =====================================================================
 -- ASSESSMENTS
@@ -256,10 +256,10 @@ CREATE TABLE IF NOT EXISTS assessments (
     CONSTRAINT chk_max_marks CHECK (max_marks > 0)
 );
 
-CREATE INDEX idx_assessments_course ON assessments(course_id);
-CREATE INDEX idx_assessments_type ON assessments(type);
-CREATE INDEX idx_assessments_date ON assessments(assessment_date);
-CREATE INDEX idx_assessments_published ON assessments(is_published);
+CREATE INDEX IF NOT EXISTS idx_assessments_course ON assessments(course_id);
+CREATE INDEX IF NOT EXISTS idx_assessments_type ON assessments(type);
+CREATE INDEX IF NOT EXISTS idx_assessments_date ON assessments(assessment_date);
+CREATE INDEX IF NOT EXISTS idx_assessments_published ON assessments(is_published);
 
 -- =====================================================================
 -- MARKS / RESULTS
@@ -284,9 +284,9 @@ CREATE TABLE IF NOT EXISTS marks (
     CONSTRAINT chk_obtained_marks CHECK (obtained_marks >= 0)
 );
 
-CREATE INDEX idx_marks_assessment ON marks(assessment_id);
-CREATE INDEX idx_marks_enrollment ON marks(enrollment_id);
-CREATE INDEX idx_marks_finalized ON marks(is_finalized);
+CREATE INDEX IF NOT EXISTS idx_marks_assessment ON marks(assessment_id);
+CREATE INDEX IF NOT EXISTS idx_marks_enrollment ON marks(enrollment_id);
+CREATE INDEX IF NOT EXISTS idx_marks_finalized ON marks(is_finalized);
 
 -- =====================================================================
 -- GRADING POLICIES
@@ -303,7 +303,7 @@ CREATE TABLE IF NOT EXISTS grading_policies (
     PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_grading_policies_default ON grading_policies(is_default);
+CREATE INDEX IF NOT EXISTS idx_grading_policies_default ON grading_policies(is_default);
 
 -- =====================================================================
 -- COURSE GRADING POLICY MAPPING
@@ -322,8 +322,8 @@ CREATE TABLE IF NOT EXISTS course_grading_policies (
     UNIQUE (course_id, grading_policy_id, effective_from)
 );
 
-CREATE INDEX idx_cgp_course ON course_grading_policies(course_id);
-CREATE INDEX idx_cgp_policy ON course_grading_policies(grading_policy_id);
+CREATE INDEX IF NOT EXISTS idx_cgp_course ON course_grading_policies(course_id);
+CREATE INDEX IF NOT EXISTS idx_cgp_policy ON course_grading_policies(grading_policy_id);
 
 -- =====================================================================
 -- AUDIT LOG
@@ -344,10 +344,10 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     FOREIGN KEY (performed_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
-CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX idx_audit_performed_by ON audit_logs(performed_by);
-CREATE INDEX idx_audit_performed_at ON audit_logs(performed_at);
-CREATE INDEX idx_audit_action ON audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_audit_performed_by ON audit_logs(performed_by);
+CREATE INDEX IF NOT EXISTS idx_audit_performed_at ON audit_logs(performed_at);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
 
 -- =====================================================================
 -- NOTIFICATIONS
@@ -368,6 +368,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_notifications_user ON notifications(user_id);
-CREATE INDEX idx_notifications_read ON notifications(is_read);
-CREATE INDEX idx_notifications_created ON notifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at);
