@@ -10,44 +10,38 @@ spring:
   application:
     name: student-academic-management
   profiles:
-    active: dev
+    active: local
   jackson:
     serialization:
       write-dates-as-timestamps: false
     deserialization:
       adjust-dates-to-context-time-zone: false
-  datasource:
-    url: jdbc:mysql://localhost:3306/student_academic_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
-      max-lifetime: 1200000
-      pool-name: StudentAcademicHikariPool
-  sql:
-    init:
-      mode: never
 
-  # JPA/Hibernate - we use JDBC directly but keep for potential future use
-  jpa:
+# Common HikariCP configuration
+datasource:
+  hikari:
+    maximum-pool-size: 20
+    minimum-idle: 5
+    idle-timeout: 300000
+    connection-timeout: 20000
+    max-lifetime: 1200000
+    pool-name: StudentAcademicHikariPool
+
+# JPA/Hibernate
+jpa:
+  hibernate:
+    ddl-auto: none
+  show-sql: false
+  properties:
     hibernate:
-      ddl-auto: none
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+      format_sql: true
 
-  # Security
-  security:
-    jwt:
-      secret: ${JWT_SECRET:studentAcademicManagementSecretKey2024!@#$%^&*()}
-      expiration: 86400000 # 24 hours
-      refresh-expiration: 604800000 # 7 days
+# Security
+security:
+  jwt:
+    secret: ${JWT_SECRET:studentAcademicManagementSecretKey2024!@#$%^&*()}
+    expiration: 86400000 # 24 hours
+    refresh-expiration: 604800000 # 7 days
 
 # Logging
 logging:
