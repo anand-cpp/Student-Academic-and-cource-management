@@ -1,13 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useAuth } from '../../contexts/AuthContext'
-import { Button } from '../../components/ui/Button'
-import { Input } from '../../components/ui/Input'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { useToast } from '../../components/ui/Toast'
+import { useAuth } from '@contexts/AuthContext'
+import { Button, Input, LoadingSpinner, useToast } from '@/components/ui'
 
 const loginSchema = z.object({
   usernameOrEmail: z.string().min(1, 'Username or email is required'),

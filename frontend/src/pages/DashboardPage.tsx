@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { useAuth } from '@contexts/AuthContext'
+import { Card, Button, Badge, LoadingSpinner } from '@/components/ui'
 import {
   AcademicCapIcon,
   UsersIcon,

@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { Button } from '../../components/ui/Button'
+import { Card, Badge, LoadingSpinner, Button, useToast } from '@/components/ui'
 import { AcademicCapIcon, ClipboardDocumentListIcon, CalendarDaysIcon, ChartBarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline'
-import { useToast } from '../../components/ui/Toast'
 
 interface Student {
   id: number
@@ -194,4 +190,4 @@ function getEnrollmentStatusVariant(status: string): 'success' | 'warning' | 'da
   }
 }
 
-import { Table } from '../../components/ui/Table'
+import { Table } from '@/components/ui'

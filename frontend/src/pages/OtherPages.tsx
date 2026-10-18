@@ -1,8 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Card } from '../../components/ui/Card'
-import { Button } from '../../components/ui/Button'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { Card, Button, LoadingSpinner } from '@/components/ui'
 import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
 
 export function FacultyPage() {
