@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public Page<UserDTO> search(UserRole role, String search, Pageable pageable) {
         if (role != null) {
-            return userRepository.findByRoleUserRole(role, pageable)
+            return userRepository.findByRole(role, pageable)
                     .map(this::toUserDTO);
         }
         return userRepository.searchUsers(search, pageable)
@@ -87,7 +87,7 @@ public class UserServiceImpl implements UserService {
             user.setAvatarUrl(updateDTO.getAvatarUrl());
         }
         if (updateDTO.getRole() != null) {
-            Role role = roleRepository.findByUserRole(updateDTO.getRole())
+            Role role = roleRepository.findByName(updateDTO.getRole())
                     .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + updateDTO.getRole()));
             user.setRole(role);
         }
@@ -168,7 +168,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public long countByRole(UserRole role) {
-        return userRepository.countByRoleUserRole(role);
+        return userRepository.countByRole(role);
     }
 
     private UserDTO toUserDTO(User user) {

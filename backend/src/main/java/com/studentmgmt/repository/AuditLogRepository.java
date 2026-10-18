@@ -22,10 +22,10 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     Page<AuditLog> findByPerformedById(Long performedById, Pageable pageable);
 
-    @Query("SELECT a FROM AuditLog a WHERE a.performedAt BETWEEN :startDate AND :endDate ORDER BY a.performedAt DESC")
+    @Query("SELECT a FROM AuditLog a WHERE a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
     List<AuditLog> findByDateRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT a FROM AuditLog a WHERE a.entityType = :entityType AND a.performedAt BETWEEN :startDate AND :endDate ORDER BY a.performedAt DESC")
+    @Query("SELECT a FROM AuditLog a WHERE a.entityType = :entityType AND a.createdAt BETWEEN :startDate AND :endDate ORDER BY a.createdAt DESC")
     List<AuditLog> findByEntityTypeAndDateRange(@Param("entityType") String entityType, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     long countByEntityTypeAndEntityId(String entityType, Long entityId);

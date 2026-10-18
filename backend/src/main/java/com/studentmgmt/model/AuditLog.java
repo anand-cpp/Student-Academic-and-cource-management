@@ -3,6 +3,8 @@ package com.studentmgmt.model;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "audit_logs", indexes = {
@@ -27,9 +29,11 @@ public class AuditLog extends BaseEntity {
     @Column(name = "action", nullable = false, length = 50)
     private String action;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "old_values", columnDefinition = "JSON")
     private JsonNode oldValues;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_values", columnDefinition = "JSON")
     private JsonNode newValues;
 

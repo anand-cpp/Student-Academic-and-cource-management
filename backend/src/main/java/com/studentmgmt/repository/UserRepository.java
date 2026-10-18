@@ -21,9 +21,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByRoleName(String roleName);
 
-    List<User> findByRoleUserRole(UserRole userRole);
+    List<User> findByRole(UserRole userRole);
 
-    Page<User> findByRoleUserRole(UserRole userRole, Pageable pageable);
+    Page<User> findByRole(UserRole userRole, Pageable pageable);
 
     @Query("SELECT u FROM User u WHERE u.isActive = true AND (:search IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<User> searchUsers(@Param("search") String search, Pageable pageable);
@@ -32,5 +32,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
-    long countByRoleUserRole(UserRole userRole);
+    long countByRole(UserRole userRole);
 }

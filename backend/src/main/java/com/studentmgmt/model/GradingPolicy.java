@@ -1,8 +1,11 @@
 package com.studentmgmt.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "grading_policies", indexes = {
@@ -24,6 +27,7 @@ public class GradingPolicy extends BaseEntity {
     @Column(name = "is_default", nullable = false)
     private Boolean isDefault = false;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "grade_boundaries", columnDefinition = "JSON", nullable = false)
     private JsonNode gradeBoundaries;
 

@@ -15,17 +15,22 @@ import java.util.Optional;
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);
+    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.course.id = :courseId")
+    Optional<Enrollment> findByStudentIdAndCourseId(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
 
-    List<Enrollment> findByStudentId(Long studentId);
+    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId")
+    List<Enrollment> findByStudentId(@Param("studentId") Long studentId);
 
-    List<Enrollment> findByCourseId(Long courseId);
+    @Query("SELECT e FROM Enrollment e WHERE e.course.id = :courseId")
+    List<Enrollment> findByCourseId(@Param("courseId") Long courseId);
 
     List<Enrollment> findByStatus(EnrollmentStatus status);
 
-    Page<Enrollment> findByStudentId(Long studentId, Pageable pageable);
+    @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId")
+    Page<Enrollment> findByStudentId(@Param("studentId") Long studentId, Pageable pageable);
 
-    Page<Enrollment> findByCourseId(Long courseId, Pageable pageable);
+    @Query("SELECT e FROM Enrollment e WHERE e.course.id = :courseId")
+    Page<Enrollment> findByCourseId(@Param("courseId") Long courseId, Pageable pageable);
 
     @Query("SELECT e FROM Enrollment e WHERE " +
            "(:studentId IS NULL OR e.student.id = :studentId) AND " +
@@ -37,19 +42,23 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             @Param("status") EnrollmentStatus status,
             Pageable pageable);
 
-    long countByStudentId(Long studentId);
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.student.id = :studentId")
+    long countByStudentId(@Param("studentId") Long studentId);
 
-    long countByCourseId(Long courseId);
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId")
+    long countByCourseId(@Param("courseId") Long courseId);
 
     long countByStatus(EnrollmentStatus status);
 
-    long countByCourseIdAndStatus(Long courseId, EnrollmentStatus status);
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId AND e.status = :status")
+    long countByCourseIdAndStatus(@Param("courseId") Long courseId, @Param("status") EnrollmentStatus status);
 
-    boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM Enrollment e WHERE e.student.id = :studentId AND e.course.id = :courseId")
+    boolean existsByStudentIdAndCourseId(@Param("studentId") Long studentId, @Param("courseId") Long courseId);
 
     @Query("SELECT e FROM Enrollment e WHERE e.student.id = :studentId AND e.status = 'ENROLLED'")
-    List<Enrollment> findActiveEnrollmentsByStudentId(Long studentId);
+    List<Enrollment> findActiveEnrollmentsByStudentId(@Param("studentId") Long studentId);
 
     @Query("SELECT e FROM Enrollment e WHERE e.course.id = :courseId AND e.status = 'ENROLLED'")
-    List<Enrollment> findActiveEnrollmentsByCourseId(Long courseId);
+    List<Enrollment> findActiveEnrollmentsByCourseId(@Param("courseId") Long courseId);
 }

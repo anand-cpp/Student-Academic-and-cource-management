@@ -83,7 +83,7 @@ public class StudentServiceImpl implements StudentService {
         Department department = departmentRepository.findById(createDTO.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + createDTO.getDepartmentId()));
 
-        Role studentRole = roleRepository.findByUserRole(UserRole.STUDENT)
+        Role studentRole = roleRepository.findByName(UserRole.STUDENT)
                 .orElseThrow(() -> new ResourceNotFoundException("Student role not found"));
 
         // Create user

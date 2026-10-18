@@ -312,6 +312,23 @@ public class DTOMapper {
                 .build();
     }
 
+    // Notification mappings
+    public NotificationDTO toNotificationDTO(Notification notification) {
+        if (notification == null) return null;
+
+        return NotificationDTO.builder()
+                .id(notification.getId())
+                .title(notification.getTitle())
+                .message(notification.getMessage())
+                .type(notification.getType().name())
+                .referenceType(notification.getReferenceType())
+                .referenceId(notification.getReferenceId())
+                .isRead(notification.getIsRead())
+                .readAt(notification.getReadAt())
+                .createdAt(notification.getCreatedAt())
+                .build();
+    }
+
     // Helper method to convert JsonNode to Map
     public Map<String, Double> jsonNodeToMap(JsonNode node) {
         if (node == null) return Map.of();

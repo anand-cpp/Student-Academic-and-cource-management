@@ -76,7 +76,7 @@ public class FacultyServiceImpl implements FacultyService {
         Department department = departmentRepository.findById(createDTO.getDepartmentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + createDTO.getDepartmentId()));
 
-        Role facultyRole = roleRepository.findByUserRole(UserRole.FACULTY)
+        Role facultyRole = roleRepository.findByName(UserRole.FACULTY)
                 .orElseThrow(() -> new ResourceNotFoundException("Faculty role not found"));
 
         User user = User.builder()
