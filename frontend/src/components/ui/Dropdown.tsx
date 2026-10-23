@@ -4,7 +4,7 @@ import { cn } from '@/utils';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export interface DropdownItem {
-  label: string;
+  label?: string;
   value?: string;
   icon?: ReactNode;
   disabled?: boolean;

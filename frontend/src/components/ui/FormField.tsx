@@ -372,7 +372,7 @@ export function DatePicker({
   return (
     <div className={className}>
       {label && (
-        <label htmlFor={inputId} required={required} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+        <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
           {label}
         </label>
       )}
@@ -451,14 +451,14 @@ export function FileUpload({
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = multiple ? e.dataTransfer.files : e.dataTransfer.files[0];
-      onChange?.(multiple ? e.dataTransfer.files : e.dataTransfer.files[0] ? [e.dataTransfer.files[0]] : null);
+      const files = multiple ? Array.from(e.dataTransfer.files) : e.dataTransfer.files[0];
+      onChange?.(multiple ? Array.from(e.dataTransfer.files) : e.dataTransfer.files[0] ? [e.dataTransfer.files[0]] : null);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onChange?.(multiple ? e.target.files : e.target.files[0] ? [e.target.files[0]] : null);
+      onChange?.(multiple ? Array.from(e.target.files) : e.target.files[0] ? [e.target.files[0]] : null);
     } else {
       onChange?.(null);
     }
@@ -472,11 +472,11 @@ export function FileUpload({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const filesArray = value ? (multiple ? Array.from(value) : [value as File]) : [];
+  const filesArray = value ? (multiple ? Array.from(value as FileList) : [value as File]) : [];
 
   return (
     <div className={className}>
-      {label && <label htmlFor={inputId} required={required} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">{label}</label>}
+      {label && <label htmlFor={inputId} className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">{label}</label>}
       <div
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}

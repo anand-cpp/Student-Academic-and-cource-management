@@ -109,7 +109,7 @@ function ToastComponent({
 }
 
 export function ToastContainer() {
-  const { toasts } = useToastContext();
+  const { toasts, hideToast } = useToastContext();
 
   return (
     <div
@@ -120,7 +120,7 @@ export function ToastContainer() {
     >
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
-          <ToastComponent {...toast} />
+          <ToastComponent {...toast} onClose={hideToast} />
         </div>
       ))}
     </div>
