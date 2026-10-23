@@ -1,10 +1,1 @@
-export { api } from './api'
-export { studentsApi } from './students'
-export { facultyApi } from './faculty'
-export { coursesApi } from './courses'
-export { enrollmentsApi } from './enrollments'
-export { attendanceApi } from './attendance'
-export { assessmentsApi } from './assessments'
-export { marksApi } from './marks'
-export { reportsApi } from './reports'
-export { departmentsApi } from './departments'
+export * from './api';

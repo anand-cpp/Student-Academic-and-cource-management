@@ -1,32 +1,102 @@
-# React + TypeScript + Vite
+# Student Academic Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A modern, comprehensive Student Academic and Course Management System built with React 18, TypeScript, Vite, and Tailwind CSS v4.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Role-Based Access Control**: ADMIN, FACULTY, STUDENT, DEPARTMENT_HEAD, REGISTRAR
+- **Complete CRUD Operations**: Students, Faculty, Courses, Enrollments, Attendance, Assessments, Marks
+- **Modern UI/UX**: Clean, professional academic aesthetic with dark mode support
+- **Responsive Design**: Mobile-first approach with Tailwind CSS v4
+- **Accessibility**: WCAG 2.2 AA compliant
+- **Data Tables**: Sorting, filtering, pagination, row selection
+- **Form Validation**: React Hook Form + Zod
+- **State Management**: TanStack Query for server state
+- **Toast Notifications**: Real-time feedback system
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite 5
+- **Styling**: Tailwind CSS v4
+- **Routing**: React Router v6
+- **Forms**: React Hook Form + Zod
+- **Data Fetching**: TanStack Query v5
+- **UI Components**: Headless UI + Heroicons
+- **Utilities**: clsx + tailwind-merge
 
-## Expanding the Oxlint configuration
+## Getting Started
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+### Prerequisites
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd student-academic-system
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### Demo Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@university.edu | password123 |
+| Faculty | faculty@university.edu | password123 |
+| Student | student@university.edu | password123 |
+| Dept Head | hod@university.edu | password123 |
+| Registrar | registrar@university.edu | password123 |
+
+## Project Structure
+
+```
+src/
+├── components/
+│   ├── ui/           # Primitive UI components (Button, Input, Table, Modal, etc.)
+│   ├── layout/       # Layout components (Sidebar, Header, Breadcrumbs)
+│   ├── navigation/   # Navigation components (NavLink, Stepper, Breadcrumbs)
+│   ├── data-display/ # Data-heavy components (DataTable, StatCard)
+│   ├── forms/        # Form components (FormField, DatePicker, FileUpload)
+│   └── feedback/     # Feedback components (Alert, Toast, Modal, EmptyState)
+├── contexts/         # React Context providers (Auth, Theme, Toast)
+├── hooks/            # Custom React hooks
+├── pages/            # Page components
+├── services/         # API services
+├── types/            # TypeScript type definitions
+├── utils/            # Utility functions
+├── App.tsx           # Main app with routing
+└── main.tsx          # Entry point
+```
+
+## Design System
+
+See [DESIGN.md](DESIGN.md) for complete design system documentation including:
+
+- Color system with semantic tokens
+- Typography scale
+- Spacing system
+- Component specifications
+- Responsive breakpoints
+- Accessibility standards
+- Dark mode implementation
+- Role-based UI variations
+
+## Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## License
+
+MIT

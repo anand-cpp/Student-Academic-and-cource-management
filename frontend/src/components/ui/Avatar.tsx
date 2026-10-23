@@ -1,84 +1,163 @@
-import React from 'react'
+import { forwardRef, HTMLAttributes, useMemo } from 'react';
+import { cn } from '@/utils';
 
-interface AvatarProps {
-  src?: string | null
-  alt?: string
-  name?: string
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
-  className?: string
-  shape?: 'circle' | 'square'
+const sizes = {
+  xs: 'h-6 w-6 text-xs',
+  sm: 'h-8 w-8 text-sm',
+  md: 'h-10 w-10 text-base',
+  lg: 'h-12 w-12 text-lg',
+  xl: 'h-16 w-16 text-xl',
+  '2xl': 'h-24 w-24 text-2xl',
+};
+
+const statusSizes = {
+  xs: 'h-1.5 w-1.5',
+  sm: 'h-2 w-2',
+  md: 'h-2.5 w-2.5',
+  lg: 'h-3 w-3',
+  xl: 'h-4 w-4',
+  '2xl': 'h-5 w-5',
+};
+
+const statusPositions = {
+  'bottom-right': 'bottom-0 right-0',
+  'bottom-left': 'bottom-0 left-0',
+  'top-right': 'top-0 right-0',
+  'top-left': 'top-0 left-0',
+};
+
+const statusColors = {
+  online: 'bg-success-500',
+  offline: 'bg-neutral-400',
+  busy: 'bg-error-500',
+  away: 'bg-warning-500',
+};
+
+export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
+  src?: string;
+  alt?: string;
+  name?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  shape?: 'circle' | 'square';
+  status?: 'online' | 'offline' | 'busy' | 'away';
+  statusPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
 
-const sizeClasses = {
-  xs: 'w-6 h-6 text-xs',
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-10 h-10 text-base',
-  lg: 'w-12 h-12 text-lg',
-  xl: 'w-16 h-16 text-xl',
-}
+const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
+  (
+    {
+      src,
+      alt,
+      name,
+      size = 'md',
+      shape = 'circle',
+      status,
+      statusPosition = 'bottom-right',
+      className,
+      ...props
+    },
+    ref
+  ) => {
+    const initials = useMemo(() => {
+      if (!name) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }, [name]);
 
-const shapeClasses = {
-  circle: 'rounded-full',
-  square: 'rounded-lg',
-}
+    const bgColor = useMemo(() => {
+      if (!name) return 'bg-neutral-400';
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const hue = hash % 360;
+      return `hsl(${hue}, 70%, 45%)`;
+    }, [name]);
 
-export function Avatar({
-  src,
-  alt,
-  name,
-  size = 'md',
-  className = '',
-  shape = 'circle',
-}: { src?: string | null; alt?: string; name?: string; size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; className?: string; shape?: 'circle' | 'square' }) {
-  const getInitials = (str: string) => {
-    return str
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
-  const bgColors = [
-    'bg-red-500',
-    'bg-orange-500',
-    'bg-amber-500',
-    'bg-green-500',
-    'bg-teal-500',
-    'bg-blue-500',
-    'bg-indigo-500',
-    'bg-violet-500',
-    'bg-purple-500',
-    'bg-pink-500',
-  ]
-
-  const getColor = (str: string) => {
-    let hash = 0
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash)
-    }
-    return ['bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-green-500', 'bg-teal-500', 'bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500', 'bg-pink-500'][Math.abs(hash) % 10]
-  }
-
-  if (src) {
     return (
-      <img
-        src={src}
-        alt={alt || name || 'Avatar'}
-        className={`object-cover ${['w-6 h-6', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12', 'w-16 h-16'][['xs', 'sm', 'md', 'lg', 'xl'].indexOf(size)]} rounded-full`}
-      />
-    )
+      <div
+        ref={ref}
+        className={cn('relative inline-flex shrink-0 overflow-hidden', sizes[size], shape === 'square' ? 'rounded-lg' : 'rounded-full', className)}
+        {...props}
+      >
+        {src ? (
+          <img
+            src={src}
+            alt={alt || name || 'Avatar'}
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div
+            className="h-full w-full flex items-center justify-center font-medium text-white select-none"
+            style={{ backgroundColor: bgColor }}
+            aria-label={name || 'User avatar'}
+          >
+            {initials}
+          </div>
+        )}
+        {status && (
+          <span
+            className={cn(
+              'absolute rounded-full border-2 border-white dark:border-neutral-900',
+              statusSizes[size],
+              statusColors[status],
+              statusPositions[statusPosition]
+            )}
+            aria-label={`Status: ${status}`}
+          />
+        )}
+      </div>
+    );
   }
+);
 
-  const initials = name ? getInitials(name) : '?'
-  const bgColor = name ? getColor(name) : 'bg-gray-400'
+Avatar.displayName = 'Avatar';
 
-  return (
-    <div
-      className={`flex items-center justify-center font-medium text-white w-10 h-10 rounded-full ${bgColor}`}
-      aria-label={name || 'User avatar'}
-    >
-      {name ? name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) : '?'}
-    </div>
-  )
+export interface AvatarGroupProps extends HTMLAttributes<HTMLDivElement> {
+  max?: number;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  spacing?: number;
 }
+
+const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(
+  ({ children, max, size = 'md', spacing = -8, className, ...props }, ref) => {
+    const childArray = Array.isArray(children) ? children : [children];
+    const validChildren = childArray.filter((child) => child != null) as React.ReactElement<AvatarProps>[];
+    const visibleChildren = max ? validChildren.slice(0, max) : validChildren;
+    const remainingCount = max ? validChildren.length - max : 0;
+
+    return (
+      <div ref={ref} className={cn('flex items-center', className)} {...props}>
+        <div className="flex" style={{ marginLeft: spacing }}>
+          {visibleChildren.map((child, index) => (
+            <div
+              key={child.key || index}
+              className={cn('relative z-10', index > 0 && `-ml-${Math.abs(spacing)}`)}
+            >
+              {child}
+            </div>
+          ))}
+          {remainingCount > 0 && (
+            <div
+              className={cn(
+                'relative z-0 flex items-center justify-center font-medium text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-800 border-2 border-white dark:border-neutral-900',
+                sizes[size],
+                'rounded-full',
+                '-ml-2'
+              )}
+              aria-label={`${remainingCount} more people`}
+            >
+              +{remainingCount}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
+AvatarGroup.displayName = 'AvatarGroup';
+
+export { Avatar, AvatarGroup };

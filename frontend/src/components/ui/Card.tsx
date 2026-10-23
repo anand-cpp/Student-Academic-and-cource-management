@@ -1,52 +1,120 @@
-import React from 'react'
+import { forwardRef, HTMLAttributes } from 'react';
+import { cn } from '@/utils';
 
-interface CardProps {
-  children: React.ReactNode
-  className?: string
-  hover?: boolean
-  padding?: 'none' | 'sm' | 'md' | 'lg'
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'interactive';
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-export function Card({ children, className = '', hover = false, padding = 'md' }: CardProps) {
-  const paddingClasses = {
-    none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+const Card = forwardRef<HTMLDivElement, CardProps>(
+  ({ children, variant = 'default', padding = 'md', className, ...props }, ref) => {
+    const variants = {
+      default: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm',
+      elevated: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-md',
+      outlined: 'bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700',
+      filled: 'bg-neutral-50 dark:bg-neutral-800 border-none',
+      interactive: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer',
+    };
+
+    const paddings = {
+      none: '',
+      sm: 'p-4',
+      md: 'p-6',
+      lg: 'p-8',
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn('rounded-xl', variants[variant], paddings[padding], className)}
+        {...props}
+      >
+        {children}
+      </div>
+    );
   }
+);
 
-  return (
-    <div className={`card ${hover ? 'card-hover' : ''} ${paddingClasses[padding]} ${className}`}>
+Card.displayName = 'Card';
+
+export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+
+const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ children, className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn('mb-4', className)}
+      {...props}
+    >
       {children}
     </div>
   )
-}
+);
 
-export function CardHeader({ children, className = '', action }: { children: React.ReactNode; className?: string; action?: React.ReactNode }) {
-  return (
-    <div className={`flex items-center justify-between mb-4 ${className}`}>
-      <div>{children}</div>
-      {action && <div>{action}</div>}
-    </div>
+CardHeader.displayName = 'CardHeader';
+
+export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
+
+const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
+  ({ children, className, ...props }, ref) => (
+    <h3
+      ref={ref}
+      className={cn('text-lg font-semibold text-neutral-900 dark:text-neutral-50', className)}
+      {...props}
+    >
+      {children}
+    </h3>
   )
-}
+);
 
-export function CardTitle({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>{children}</h3>
-}
+CardTitle.displayName = 'CardTitle';
 
-export function CardDescription({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-sm text-gray-500 mt-1 ${className}`}>{children}</p>
-}
+export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {}
 
-export function CardContent({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={className}>{children}</div>
-}
+const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
+  ({ children, className, ...props }, ref) => (
+    <p
+      ref={ref}
+      className={cn('mt-1 text-sm text-neutral-500 dark:text-neutral-400', className)}
+      {...props}
+    >
+      {children}
+    </p>
+  )
+);
 
-export function CardFooter({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={`flex items-center mt-4 pt-4 border-t border-gray-100 ${className}`}>
+CardDescription.displayName = 'CardDescription';
+
+export interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
+
+const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
+  ({ children, className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn('', className)}
+      {...props}
+    >
       {children}
     </div>
   )
-}
+);
+
+CardContent.displayName = 'CardContent';
+
+export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
+
+const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+  ({ children, className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn('mt-4 flex items-center justify-end gap-3', className)}
+      {...props}
+    >
+      {children}
+    </div>
+  )
+);
+
+CardFooter.displayName = 'CardFooter';
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

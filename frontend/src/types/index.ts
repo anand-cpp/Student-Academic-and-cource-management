@@ -1,263 +1,378 @@
-export interface User {
-  id: number
-  username: string
-  email: string
-  fullName: string
-  phone?: string
-  avatarUrl?: string
-  role: UserRole
-  isActive: boolean
-  lastLoginAt?: string
-  emailVerified: boolean
-  studentId?: number
-  facultyId?: number
-}
+export type UserRole = 'ADMIN' | 'FACULTY' | 'STUDENT' | 'DEPARTMENT_HEAD' | 'REGISTRAR';
 
-export type UserRole = 'ADMIN' | 'FACULTY' | 'STUDENT' | 'DEPARTMENT_HEAD' | 'REGISTRAR'
-
-export interface AuthResponse {
-  accessToken: string
-  refreshToken: string
-  tokenType: string
-  expiresIn: number
-  user: User
-}
-
-export interface LoginRequest {
-  usernameOrEmail: string
-  password: string
-}
-
-export interface Student {
-  id: number
-  studentId: string
-  userId: number
-  username: string
-  email: string
-  fullName: string
-  phone?: string
-  avatarUrl?: string
-  departmentId: number
-  departmentCode: string
-  departmentName: string
-  admissionYear: number
-  currentSemester: number
-  status: StudentStatus
-  dateOfBirth?: string
-  gender?: string
-  address?: string
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  bloodGroup?: string
-  createdAt: string
-  updatedAt: string
-  activeEnrollmentsCount?: number
-  attendancePercentage?: number
-  overallPercentage?: number
-  overallGrade?: string
-}
-
-export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED' | 'WITHDRAWN'
-
-export interface Faculty {
-  id: number
-  facultyId: string
-  userId: number
-  username: string
-  email: string
-  fullName: string
-  phone?: string
-  avatarUrl?: string
-  departmentId: number
-  departmentCode: string
-  departmentName: string
-  designation: FacultyDesignation
-  specialization?: string
-  qualification?: string
-  hireDate: string
-  status: FacultyStatus
-  officeLocation?: string
-  researchInterests?: string
-  createdAt: string
-  updatedAt: string
-  assignedCoursesCount?: number
-  totalStudentsCount?: number
-}
-
-export type FacultyDesignation = 'PROFESSOR' | 'ASSOCIATE_PROFESSOR' | 'ASSISTANT_PROFESSOR' | 'LECTURER' | 'ADJUNCT' | 'VISITING'
-
-export type FacultyStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'RETIRED'
-
-export interface Department {
-  id: number
-  code: string
-  name: string
-  description?: string
-  headFacultyId?: number
-  headFacultyName?: string
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  studentCount?: number
-  facultyCount?: number
-  courseCount?: number
-}
-
-export interface Course {
-  id: number
-  courseCode: string
-  title: string
-  description?: string
-  credits: number
-  departmentId: number
-  departmentCode: string
-  departmentName: string
-  semester: number
-  facultyId?: number
-  facultyName?: string
-  maxEnrollment: number
-  prerequisites?: string
-  syllabusUrl?: string
-  status: CourseStatus
-  academicYear: string
-  createdAt: string
-  updatedAt: string
-  currentEnrollmentCount?: number
-  availableSeats?: number
-}
-
-export type CourseStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED'
-
-export interface Enrollment {
-  id: number
-  studentId: number
-  studentName: string
-  studentCode: string
-  courseId: number
-  courseCode: string
-  courseTitle: string
-  enrollmentDate: string
-  status: EnrollmentStatus
-  grade?: string
-  gradePoints?: number
-  completionDate?: string
-  createdAt: string
-  updatedAt: string
-}
-
-export type EnrollmentStatus = 'ENROLLED' | 'DROPPED' | 'COMPLETED' | 'WITHDRAWN' | 'FAILED'
+export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED' | 'WITHDRAWN';
+export type FacultyStatus = 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'RETIRED';
+export type FacultyDesignation = 'PROFESSOR' | 'ASSOCIATE_PROFESSOR' | 'ASSISTANT_PROFESSOR' | 'LECTURER' | 'INSTRUCTOR' | 'TEACHING_ASSISTANT';
+export type CourseStatus = 'ACTIVE' | 'INACTIVE' | 'ARCHIVED';
+export type EnrollmentStatus = 'ENROLLED' | 'DROPPED' | 'COMPLETED' | 'FAILED' | 'WITHDRAWN';
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+export type AssessmentType = 'QUIZ' | 'ASSIGNMENT' | 'MIDTERM' | 'FINAL' | 'PROJECT' | 'PRESENTATION' | 'LAB' | 'OTHER';
 
 export interface AttendanceSession {
-  id: number
-  courseId: number
-  courseCode: string
-  courseTitle: string
-  sessionDate: string
-  sessionNumber: number
-  topic?: string
-  durationMinutes: number
-  isCancelled: boolean
-  cancellationReason?: string
-  createdById: number
-  createdByName: string
-  createdAt: string
-  updatedAt: string
-  totalStudents?: number
-  presentCount?: number
-  absentCount?: number
-  lateCount?: number
-  excusedCount?: number
-  attendancePercentage?: number
+  id: string;
+  courseId: string;
+  sectionId: string;
+  facultyId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  topic: string;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AttendanceRecord {
-  id: number
-  sessionId: number
-  sessionDate: string
-  sessionNumber: number
-  enrollmentId: number
-  studentId: number
-  studentName: string
-  studentCode: string
-  status: AttendanceStatus
-  remarks?: string
-  recordedById: number
-  recordedByName: string
-  recordedAt: string
-  updatedAt: string
+  id: string;
+  sessionId: string;
+  studentId: string;
+  status: AttendanceStatus;
+  markedAt: string;
+  remarks?: string;
 }
 
-export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED' | 'MEDICAL'
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  avatar?: string;
+  departmentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastLoginAt?: string;
+}
+
+export interface Student {
+  id: string;
+  studentId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  dateOfBirth: string;
+  gender: 'MALE' | 'FEMALE' | 'OTHER';
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  nationality?: string;
+  bloodGroup?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+  enrollmentDate: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'SUSPENDED' | 'WITHDRAWN';
+  departmentId: string;
+  programId: string;
+  batchId: string;
+  sectionId?: string;
+  advisorId?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  guardianRelation?: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Faculty {
+  id: string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  qualification?: string;
+  specialization?: string;
+  experienceYears?: number;
+  joiningDate: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'RETIRED';
+  departmentId: string;
+  designationId: string;
+  reportingTo?: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Department {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  headId?: string;
+  establishedDate?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Program {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  departmentId: string;
+  durationYears: number;
+  totalCredits: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Batch {
+  id: string;
+  name: string;
+  startYear: number;
+  endYear: number;
+  programId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Section {
+  id: string;
+  name: string;
+  batchId: string;
+  capacity: number;
+  currentStrength: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Course {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+  credits: number;
+  theoryHours: number;
+  practicalHours: number;
+  departmentId: string;
+  programId: string;
+  semester: number;
+  type: 'CORE' | 'ELECTIVE' | 'LAB' | 'PROJECT' | 'SEMINAR';
+  prerequisites?: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Enrollment {
+  id: string;
+  studentId: string;
+  courseId: string;
+  sectionId: string;
+  facultyId?: string;
+  enrollmentDate: string;
+  status: 'ENROLLED' | 'DROPPED' | 'COMPLETED' | 'FAILED' | 'WITHDRAWN';
+  grade?: string;
+  marks?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Attendance {
+  id: string;
+  enrollmentId: string;
+  date: string;
+  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+  markedBy: string;
+  remarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface Assessment {
-  id: number
-  courseId: number
-  courseCode: string
-  title: string
-  description?: string
-  type: AssessmentType
-  maxMarks: number
-  weightage: number
-  assessmentDate: string
-  dueDate?: string
-  isPublished: boolean
-  createdById: number
-  createdAt: string
-  updatedAt: string
-  submittedCount?: number
-  gradedCount?: number
-  averageScore?: number
-  averagePercentage?: number
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  type: 'QUIZ' | 'ASSIGNMENT' | 'MIDTERM' | 'FINAL' | 'PROJECT' | 'PRESENTATION' | 'LAB' | 'OTHER';
+  maxMarks: number;
+  weightage: number;
+  scheduledDate: string;
+  dueDate?: string;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export type AssessmentType = 'QUIZ' | 'MIDTERM' | 'FINAL' | 'ASSIGNMENT' | 'PROJECT' | 'LAB' | 'PRESENTATION' | 'PARTICIPATION' | 'OTHER'
-
-export interface Marks {
-  id: number
-  assessmentId: number
-  assessmentTitle: string
-  assessmentType: string
-  maxMarks: number
-  weightage: number
-  enrollmentId: number
-  studentId: number
-  studentName: string
-  obtainedMarks: number
-  percentage: number
-  weightedScore: number
-  gradedById?: number
-  gradedAt?: string
-  feedback?: string
-  isFinalized: boolean
-  createdAt: string
-  updatedAt: string
+export interface Mark {
+  id: string;
+  enrollmentId: string;
+  assessmentId: string;
+  marksObtained: number;
+  gradedBy: string;
+  gradedAt: string;
+  remarks?: string;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface DashboardStats {
-  totalStudents: number
-  totalFaculty: number
-  totalCourses: number
-  activeEnrollments: number
-  averageAttendancePercentage: number
-  averagePerformancePercentage: number
-  pendingApprovals: number
+export interface ReportCard {
+  id: string;
+  studentId: string;
+  batchId: string;
+  semester: number;
+  generatedAt: string;
+  generatedBy: string;
+  gpa: number;
+  cgpa: number;
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success: boolean;
+  errors?: Record<string, string[]>;
 }
 
 export interface PaginatedResponse<T> {
-  content: T[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
-  first: boolean
-  last: boolean
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
-export interface ApiError {
-  timestamp: string
-  status: number
-  error: string
-  message: string
-  path: string
-  validationErrors?: Record<string, string>
+export interface FilterParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
+}
+
+export interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: string;
+  children?: NavItem[];
+  roles?: UserRole[];
+}
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+  isCurrent?: boolean;
+}
+
+export interface StatCardData {
+  label: string;
+  value: string | number;
+  change?: number;
+  changeLabel?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  icon?: string;
+  color?: 'primary' | 'success' | 'warning' | 'error' | 'info';
+}
+
+export interface TableColumn<T = unknown> {
+  key: string;
+  header: string;
+  accessor?: keyof T | ((row: T) => unknown);
+  sortable?: boolean;
+  filterable?: boolean;
+  render?: (value: unknown, row: T) => React.ReactNode;
+  width?: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+export interface TableState {
+  page: number;
+  pageSize: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  filters: Record<string, unknown>;
+  selection: string[];
+}
+
+export interface FormFieldProps {
+  name: string;
+  label: string;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date' | 'datetime-local' | 'time' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'switch' | 'file';
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  readOnly?: boolean;
+  options?: SelectOption[];
+  validation?: unknown;
+  helperText?: string;
+  error?: string;
+  className?: string;
+}
+
+export interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  description?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  closeOnOverlayClick?: boolean;
+  closeOnEscape?: boolean;
+}
+
+export interface ToastProps {
+  id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message?: string;
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  onClose: (id: string) => void;
+}
+
+export interface DropdownItem {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+  disabled?: boolean;
+  divider?: boolean;
+  danger?: boolean;
+  onClick?: () => void;
+}
+
+export interface SidebarItem {
+  label: string;
+  href?: string;
+  icon: React.ReactNode;
+  children?: SidebarItem[];
+  badge?: string;
+  roles?: UserRole[];
+  isActive?: boolean;
+}
+
+export interface Theme {
+  theme: 'light' | 'dark' | 'system';
+  resolvedTheme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }

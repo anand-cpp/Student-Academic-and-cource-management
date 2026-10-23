@@ -1,24 +1,24 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useAuth } from '@contexts/AuthContext'
-import { Button, Input, LoadingSpinner, useToast } from '@/components/ui'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button, Input, Card } from '@/components/ui';
+import { useAuth } from '@/contexts';
+import { useToast } from '@/contexts';
 
 const loginSchema = z.object({
-  usernameOrEmail: z.string().min(1, 'Username or email is required'),
-  password: z.string().min(1, 'Password is required'),
-})
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
 
-type LoginFormData = z.infer<typeof loginSchema>
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-  const { toast } = useToast()
-  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const { showToast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     register,
@@ -26,121 +26,92 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  })
+    defaultValues: {
+      email: 'admin@university.edu',
+      password: 'password123',
+    },
+  });
 
   const onSubmit = async (data: LoginFormData) => {
-    setLoading(true)
+    setIsLoading(true);
     try {
-      await login(data.usernameOrEmail, data.password)
-      toast({ type: 'success', title: 'Welcome back!', message: 'You have been successfully logged in' })
-      navigate('/')
-    } catch (error: any) {
-      toast({
+      await login(data.email, data.password);
+      showToast({
+        type: 'success',
+        title: 'Welcome back!',
+        message: 'You have been successfully logged in.',
+      });
+      navigate('/dashboard');
+    } catch (error) {
+      showToast({
         type: 'error',
         title: 'Login failed',
-        message: error.response?.data?.message || 'Invalid credentials. Please try again.',
-      })
+        message: error instanceof Error ? error.message : 'Invalid credentials',
+      });
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center">
-          <svg className="w-12 h-12 text-primary-600" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
-          </svg>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-heading font-bold text-gray-900">Sign in to your account</h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Academic Management System
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-50">Student Academic System</h1>
+          <p className="mt-2 text-neutral-500 dark:text-neutral-400">Sign in to your account</p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label htmlFor="usernameOrEmail" className="label">
-                Username or Email
-              </label>
-              <Input
-                id="usernameOrEmail"
-                name="usernameOrEmail"
-                type="text"
-                autoComplete="username"
-                placeholder="Enter your username or email"
-                error={errors.usernameOrEmail?.message}
-                {...register('usernameOrEmail')}
-              />
-            </div>
+        <Card className="p-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <Input
+              {...register('email')}
+              label="Email"
+              type="email"
+              placeholder="Enter your email"
+              error={errors.email?.message}
+              leftIcon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+              autoComplete="email"
+            />
 
-            <div>
-              <label htmlFor="password" className="label">
-                Password
-              </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                error={errors.password?.message}
-                {...register('password')}
-              />
-            </div>
+            <Input
+              {...register('password')}
+              label="Password"
+              type="password"
+              placeholder="Enter your password"
+              error={errors.password?.message}
+              leftIcon={<svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>}
+              autoComplete="current-password"
+            />
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  name="remember"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-600">
-                  Remember me
-                </label>
-              </div>
-              <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-500">
-                Forgot password?
-              </a>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500" />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">Remember me</span>
+              </label>
+              <a href="#" className="text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400">Forgot password?</a>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" loading={loading}>
-              {loading ? <LoadingSpinner size="sm" /> : 'Sign in'}
+            <Button type="submit" fullWidth loading={isLoading}>
+              Sign In
             </Button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Demo Credentials</span>
-              </div>
-            </div>
-
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-900">Admin</p>
-                <p className="text-gray-600">admin / password123</p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-900">Faculty</p>
-                <p className="text-gray-600">prof.smith / password123</p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-900">Student</p>
-                <p className="text-gray-600">student001 / password123</p>
-              </div>
+          <div className="mt-6 p-4 bg-neutral-50 dark:bg-neutral-800 rounded-lg text-sm">
+            <p className="font-medium text-neutral-900 dark:text-neutral-50 mb-2">Demo Credentials:</p>
+            <div className="space-y-1 text-neutral-600 dark:text-neutral-400 font-mono text-xs">
+              <div>Admin: admin@university.edu / password123</div>
+              <div>Faculty: faculty@university.edu / password123</div>
+              <div>Student: student@university.edu / password123</div>
+              <div>Dept Head: hod@university.edu / password123</div>
+              <div>Registrar: registrar@university.edu / password123</div>
             </div>
           </div>
-        </div>
+        </Card>
+
+        <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+          © 2024 Student Academic Management System. All rights reserved.
+        </p>
       </div>
     </div>
-  )
+  );
 }

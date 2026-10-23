@@ -1,193 +1,232 @@
-import React, { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { Card, Button, Input, Select, Table, Badge, LoadingSpinner, useToast, TablePagination } from '@/components/ui'
-import { PlusIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DataTable, Button, Modal, Input, Select, FormField, Card } from '@/components';
+import { api } from '@/services';
+import { PlusIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { Student } from '@/types';
+import { useToast } from '@/contexts';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
-interface Student {
-  id: number
-  studentId: string
-  fullName: string
-  email: string
-  departmentName: string
-  currentSemester: number
-  status: string
-}
+const studentSchema = z.object({
+  studentId: z.string().min(1, 'Student ID is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']),
+  enrollmentDate: z.string().min(1, 'Enrollment date is required'),
+  departmentId: z.string().min(1, 'Department is required'),
+  programId: z.string().min(1, 'Program is required'),
+  batchId: z.string().min(1, 'Batch is required'),
+  sectionId: z.string().optional(),
+});
+
+type StudentFormData = z.infer<typeof studentSchema>;
 
 export function StudentsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [students, setStudents] = useState<Student[]>([])
-  const [loading, setLoading] = useState(false)
-  const [totalPages, setTotalPages] = useState(0)
-  const { toast } = useToast()
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Student | null>(null);
+  const [departments, setDepartments] = useState<Array<{id: string; name: string}>>([]);
+  const [programs, setPrograms] = useState<Array<{id: string; name: string}>>([]);
+  const [batches, setBatches] = useState<Array<{id: string; name: string}>>([]);
+  const [sections, setSections] = useState<Array<{id: string; name: string}>>([]);
 
-  const page = parseInt(searchParams.get('page') || '0')
-  const size = parseInt(searchParams.get('size') || '10')
-  const search = searchParams.get('search') || ''
-  const status = searchParams.get('status') || ''
-  const departmentId = searchParams.get('departmentId') || ''
-
-  const fetchStudents = async () => {
-    setLoading(true)
-    try {
-      // Mock data for now
-      setStudents([
-        { id: 1, studentId: 'STU2023001', fullName: 'Alice Johnson', email: 'alice@example.com', departmentName: 'Computer Science', currentSemester: 3, status: 'ACTIVE' },
-        { id: 2, studentId: 'STU2023002', fullName: 'Bob Williams', email: 'bob@example.com', departmentName: 'Computer Science', currentSemester: 3, status: 'ACTIVE' },
-        { id: 3, studentId: 'STU2023003', fullName: 'Carol Davis', email: 'carol@example.com', departmentName: 'Computer Science', currentSemester: 3, status: 'ACTIVE' },
-      ])
-      setTotalPages(1)
-    } catch (err) {
-      toast({ type: 'error', title: 'Error', message: 'Failed to load students' })
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<StudentFormData>({
+    resolver: zodResolver(studentSchema),
+  });
 
   useEffect(() => {
-    fetchStudents()
-  }, [page, size, search, status, departmentId])
+    loadStudents();
+    loadReferenceData();
+  }, []);
 
-  const [searchValue, setSearchValue] = useState(search)
+  const loadStudents = async () => {
+    setLoading(true);
+    try {
+      const response = await api.students.getAll({ page: 1, pageSize: 100 });
+      setStudents(response.data);
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to load students' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const params = new URLSearchParams(searchParams)
-    params.set('search', searchValue)
-    params.set('page', '0')
-    setSearchParams(params)
-  }
+  const loadReferenceData = async () => {
+    try {
+      const [depts, progs, bats, secs] = await Promise.all([
+        api.departments.getAll(),
+        api.programs.getAll(),
+        api.batches.getAll(),
+        api.sections.getAll(),
+      ]);
+      setDepartments(depts.map(d => ({ id: d.id, name: d.name })));
+      setPrograms(progs.map(p => ({ id: p.id, name: p.name })));
+      setBatches(bats.map(b => ({ id: b.id, name: b.name })));
+      setSections(secs.map(s => ({ id: s.id, name: s.name })));
+    } catch (error) {
+      console.error('Failed to load reference data:', error);
+    }
+  };
 
-  const handleFilterChange = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams)
-    if (value) params.set(key, value)
-    else params.delete(key)
-    params.set('page', '0')
-    setSearchParams(params)
-  }
+  const handleCreate = async (data: StudentFormData) => {
+    try {
+      await api.students.create(data as any);
+      showToast({ type: 'success', title: 'Success', message: 'Student created successfully' });
+      setModalOpen(false);
+      reset();
+      loadStudents();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to create student' });
+    }
+  };
 
-  const clearFilters = () => setSearchParams({})
+  const handleUpdate = async (data: StudentFormData) => {
+    if (!editingStudent) return;
+    try {
+      await api.students.update(editingStudent.id, data as any);
+      showToast({ type: 'success', title: 'Success', message: 'Student updated successfully' });
+      setModalOpen(false);
+      setEditingStudent(null);
+      reset();
+      loadStudents();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to update student' });
+    }
+  };
 
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' },
-    { value: 'GRADUATED', label: 'Graduated' },
-    { value: 'SUSPENDED', label: 'Suspended' },
-    { value: 'WITHDRAWN', label: 'Withdrawn' },
-  ]
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await api.students.delete(deleteConfirm.id);
+      showToast({ type: 'success', title: 'Success', message: 'Student deleted successfully' });
+      setDeleteConfirm(null);
+      loadStudents();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to delete student' });
+    }
+  };
 
-  const departmentOptions = [
-    { value: '', label: 'All Departments' },
-    { value: '1', label: 'Computer Science' },
-    { value: '2', label: 'Electrical Engineering' },
-  ]
+  const openEditModal = (student: Student) => {
+    setEditingStudent(student);
+    reset({
+      studentId: student.studentId,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      phone: student.phone || '',
+      dateOfBirth: student.dateOfBirth,
+      gender: student.gender,
+      enrollmentDate: student.enrollmentDate,
+      departmentId: student.departmentId,
+      programId: student.programId,
+      batchId: student.batchId,
+      sectionId: student.sectionId || '',
+    });
+    setModalOpen(true);
+  };
+
+  const columns = [
+    { key: 'studentId', header: 'Student ID', accessor: 'studentId' },
+    { key: 'name', header: 'Name', accessor: (row: Student) => `${row.firstName} ${row.lastName}` },
+    { key: 'email', header: 'Email', accessor: 'email' },
+    { key: 'phone', header: 'Phone', accessor: 'phone' },
+    { key: 'status', header: 'Status', accessor: 'status', render: (value: string) => (
+      <Badge variant={value === 'ACTIVE' ? 'success' : value === 'INACTIVE' ? 'default' : value === 'GRADUATED' ? 'info' : 'warning'} size="sm">{value}</Badge>
+    )},
+    { key: 'departmentId', header: 'Department', accessor: (row: Student) => departments.find(d => d.id === row.departmentId)?.name || row.departmentId },
+    { key: 'actions', header: 'Actions', render: (_, row: Student) => (
+      <div className="flex items-center justify-center gap-1">
+        <button onClick={() => openEditModal(row)} className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Edit"><PencilIcon className="h-5 w-5" /></button>
+        <button onClick={() => setDeleteConfirm(row)} className="p-1.5 rounded-lg text-error-500 hover:bg-error-50 dark:hover:bg-error-900/20" aria-label="Delete"><TrashIcon className="h-5 w-5" /></button>
+      </div>
+    )},
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Students</h1>
-          <p className="text-gray-500 mt-1">Manage student records and academic information</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Students</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">Manage student records</p>
         </div>
-        <Link to="/students/create" className="btn-primary">
-          <PlusIcon className="w-5 h-5 mr-2" />
+        <Button onClick={() => { setEditingStudent(null); reset(); setModalOpen(true); }}>
+          <PlusIcon className="h-5 w-5" />
           Add Student
-        </Link>
+        </Button>
       </div>
 
-      <Card className="p-4">
-        <form onSubmit={(e) => { e.preventDefault(); const params = new URLSearchParams(searchParams); params.set('search', searchValue); params.set('page', '0'); setSearchParams(params) }} className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="search"
-              placeholder="Search students..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              className="input pl-10"
-            />
-          </div>
-          <Select
-            options={statusOptions}
-            value={status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
-            placeholder="All Statuses"
-            className="w-40"
-          />
-          <Select
-            options={departmentOptions}
-            value={departmentId}
-            onChange={(e) => handleFilterChange('departmentId', e.target.value)}
-            placeholder="All Departments"
-            className="w-48"
-          />
-          {(search || status || departmentId) ? (
-            <Button type="button" variant="ghost" onClick={clearFilters}>
-              <ArrowPathIcon className="w-5 h-5 mr-2" />
-              Clear
-            </Button>
-          ) : null}
-        </form>
-      </Card>
+      <DataTable
+        columns={columns}
+        data={students}
+        keyAccessor="id"
+        title={`${students.length} students`}
+        searchable
+        searchPlaceholder="Search students..."
+        exportable
+        onExport={(data) => console.log('Export', data)}
+        loading={loading}
+      />
 
-      <Card>
-        {loading ? (
-          <div className="py-12 text-center">
-            <LoadingSpinner size="lg" />
-          </div>
-        ) : students.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-gray-500">No students found</p>
-            <Link to="/students/create" className="btn-primary mt-4 inline-block">
-              <PlusIcon className="w-5 h-5 mr-2" />
-              Add First Student
-            </Link>
-          </div>
-        ) : (
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingStudent(null); reset(); }}
+        title={editingStudent ? 'Edit Student' : 'Add Student'}
+        size="lg"
+        footer={
           <>
-            <Table
-              data={students}
-              columns={[
-                { key: 'studentId', header: 'Student ID', render: (s) => <span className="font-mono text-sm">{s.studentId}</span> },
-                { key: 'fullName', header: 'Name', render: (s) => <Link to={`/students/${s.id}`} className="font-medium text-gray-900 hover:text-primary-600">{s.fullName}</Link> },
-                { key: 'email', header: 'Email', render: (s) => <span className="text-gray-600">{s.email}</span> },
-                { key: 'departmentName', header: 'Department', render: (s) => <Badge variant="info">{s.departmentName}</Badge> },
-                { key: 'currentSemester', header: 'Semester', render: (s) => <span>Sem {s.currentSemester}</span> },
-                { key: 'status', header: 'Status', render: (s) => <Badge variant={getStatusVariant(s.status)}>{s.status}</Badge> },
-                { key: 'actions', header: '', render: (s) => (
-                  <div className="flex items-center gap-2">
-                    <Link to={`/students/${s.id}`} className="btn-secondary btn-sm">View</Link>
-                    <Link to={`/students/${s.id}/edit`} className="btn-secondary btn-sm">Edit</Link>
-                  </div>
-                ) },
-              ]}
-              keyExtractor={(s) => s.id}
-              rowClassName={(s) => s.status === 'WITHDRAWN' ? 'opacity-50' : ''}
-              hoverable
-            />
-            {totalPages > 1 && (
-              <TablePagination
-                currentPage={page + 1}
-                totalPages={totalPages}
-                onPageChange={(p) => setSearchParams({ ...Object.fromEntries(searchParams), page: (p - 1).toString() })}
-              />
-            )}
+            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditingStudent(null); reset(); }}>Cancel</Button>
+            <Button onClick={handleSubmit(editingStudent ? handleUpdate : handleCreate)}>Save</Button>
           </>
-        )}
-      </Card>
+        }
+      >
+        <form onSubmit={handleSubmit(editingStudent ? handleUpdate : handleCreate)} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField name="studentId" label="Student ID" control={control} error={errors.studentId?.message} />
+            <FormField name="firstName" label="First Name" control={control} error={errors.firstName?.message} />
+            <FormField name="lastName" label="Last Name" control={control} error={errors.lastName?.message} />
+            <FormField name="email" label="Email" type="email" control={control} error={errors.email?.message} />
+            <FormField name="phone" label="Phone" control={control} />
+            <FormField name="dateOfBirth" label="Date of Birth" type="date" control={control} error={errors.dateOfBirth?.message} />
+            <FormField name="gender" label="Gender" type="select" options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'OTHER', label: 'Other' }]} control={control} error={errors.gender?.message} />
+            <FormField name="enrollmentDate" label="Enrollment Date" type="date" control={control} error={errors.enrollmentDate?.message} />
+            <FormField name="departmentId" label="Department" type="select" options={departments.map(d => ({ value: d.id, label: d.name }))} control={control} error={errors.departmentId?.message} />
+            <FormField name="programId" label="Program" type="select" options={programs.map(p => ({ value: p.id, label: p.name }))} control={control} error={errors.programId?.message} />
+            <FormField name="batchId" label="Batch" type="select" options={batches.map(b => ({ value: b.id, label: b.name }))} control={control} error={errors.batchId?.message} />
+            <FormField name="sectionId" label="Section" type="select" options={[{ value: '', label: 'Select section' }, ...sections.map(s => ({ value: s.id, label: s.name }))]} control={control} />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete Student"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+          </>
+        }
+      >
+        <p>Are you sure you want to delete <strong>{deleteConfirm?.firstName} {deleteConfirm?.lastName}</strong> ({deleteConfirm?.studentId})? This action cannot be undone.</p>
+      </Modal>
     </div>
-  )
+  );
 }
-
-function getStatusVariant(status: string): 'success' | 'warning' | 'danger' | 'info' | 'gray' | 'primary' {
-  switch (status) {
-    case 'ACTIVE': return 'success'
-    case 'INACTIVE': return 'gray'
-    case 'GRADUATED': return 'primary'
-    case 'SUSPENDED': return 'warning'
-    case 'WITHDRAWN': return 'danger'
-    default: return 'gray'
-  }
-}
-
-// Duplicate code removed

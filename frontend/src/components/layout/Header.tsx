@@ -1,97 +1,141 @@
-import React, { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
-import { MagnifyingGlassIcon, UserCircleIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { useToast } from '../../components/ui/Toast'
-import { Avatar } from '../ui/Avatar'
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
+import { ReactNode } from 'react';
+import { cn } from '@/utils';
+import { Button, Dropdown, Avatar, AvatarGroup } from '@/components/ui';
+import { BellIcon, MagnifyingGlassIcon, Cog6ToothIcon, UserCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { useAuth, useTheme } from '@/contexts';
+import { DropdownItem } from '@/types';
 
-export function Header() {
-  const { user, logout, isAuthenticated } = useAuth()
-  const location = useLocation()
-  const { toast } = useToast()
-  const [showProfileMenu, setShowProfileMenu] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSearch, setShowSearch] = useState(false)
+export interface HeaderProps {
+  title?: string;
+  breadcrumbs?: Array<{ label: string; href?: string }>;
+  actions?: ReactNode;
+  className?: string;
+  onSearch?: (query: string) => void;
+  searchPlaceholder?: string;
+}
 
-  if (!isAuthenticated) return null
+export function Header({
+  title,
+  breadcrumbs,
+  actions,
+  className,
+  onSearch,
+  searchPlaceholder = 'Search...',
+}: HeaderProps) {
+  const { user, logout, hasRole } = useAuth();
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
-  const handleLogout = () => {
-    logout()
-    toast({ type: 'success', title: 'Logged out', message: 'You have been successfully logged out' })
-  }
+  const userMenuItems: DropdownItem[] = [
+    { label: 'Profile', value: 'profile', icon: <UserCircleIcon className="h-5 w-5" />, onClick: () => {} },
+    { label: 'Settings', value: 'settings', icon: <Cog6ToothIcon className="h-5 w-5" />, onClick: () => {} },
+    { label: 'Theme', value: 'theme', icon: resolvedTheme === 'dark' ? '🌙' : '☀️', onClick: () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark') },
+    { divider: true },
+    { label: 'Sign out', value: 'logout', icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />, danger: true, onClick: logout },
+  ];
+
+  const notificationItems: DropdownItem[] = [
+    { label: 'New enrollment request', value: '1', onClick: () => {} },
+    { label: 'Grade submitted for review', value: '2', onClick: () => {} },
+    { label: 'Attendance alert', value: '3', onClick: () => {} },
+    { divider: true },
+    { label: 'View all notifications', value: 'all', onClick: () => {} },
+  ];
+
+  const searchItems: DropdownItem[] = [
+    { label: 'Students', value: 'students', icon: '👥', onClick: () => {} },
+    { label: 'Faculty', value: 'faculty', icon: '👨‍🏫', onClick: () => {} },
+    { label: 'Courses', value: 'courses', icon: '📚', onClick: () => {} },
+    { label: 'Reports', value: 'reports', icon: '📊', onClick: () => {} },
+  ];
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
-      <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-4 lg:hidden">
-          <button
-            type="button"
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            onClick={() => setShowSearch(true)}
-            aria-label="Search"
-          >
-            <MagnifyingGlassIcon className="w-5 h-5" />
-          </button>
+    <header className={cn('sticky top-0 z-30 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-700', className)}>
+      <div className="flex h-16 items-center justify-between px-4 lg:px-6 gap-4">
+        <div className="flex items-center gap-4 flex-1 min-w-0">
+          {title && (
+            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 truncate">
+              {title}
+            </h1>
+          )}
+          {breadcrumbs && breadcrumbs.length > 0 && (
+            <nav className="hidden md:flex items-center gap-2 text-sm" aria-label="Breadcrumb">
+              {breadcrumbs.map((crumb, index) => (
+                <span key={crumb.label} className="flex items-center gap-2">
+                  {index > 0 && <span className="text-neutral-400">/</span>}
+                  {crumb.href ? (
+                    <a href={crumb.href} className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200">
+                      {crumb.label}
+                    </a>
+                  ) : (
+                    <span className="text-neutral-900 dark:text-neutral-50 font-medium">{crumb.label}</span>
+                  )}
+                </span>
+              ))}
+            </nav>
+          )}
         </div>
 
-        <div className="flex-1 flex items-center justify-center max-w-md mx-4">
-          <div className="relative w-full max-w-md">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input pl-10 w-full"
-              placeholder="Search..."
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {onSearch && (
+            <div className="relative hidden sm:block">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" aria-hidden="true" />
+              <input
+                type="search"
+                placeholder={searchPlaceholder}
+                onChange={(e) => onSearch?.(e.target.value)}
+                className="w-64 pl-10 pr-4 py-2 text-sm bg-neutral-100 dark:bg-neutral-800 border-none rounded-lg text-neutral-900 dark:text-neutral-50 placeholder:text-neutral-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition-colors"
+                aria-label="Search"
+              />
+            </div>
+          )}
+
+          <Dropdown
+            trigger={
+              <Button variant="ghost" size="sm" aria-label="Notifications">
+                <BellIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-error-500 text-white text-xs font-medium rounded-full flex items-center justify-center">3</span>
+              </Button>
+            }
+            items={notificationItems}
+            align="right"
+          />
+
+          {hasRole(['ADMIN', 'DEPARTMENT_HEAD', 'REGISTRAR']) && (
+            <Dropdown
+              trigger={
+                <Button variant="ghost" size="sm" aria-label="Quick actions">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+                </Button>
+              }
+              items={searchItems}
+              align="right"
+              width={200}
             />
-          </div>
-        </div>
+          )}
 
-        <div className="flex items-center gap-4">
-          <div className="relative" onClick={() => setShowProfileMenu(!showProfileMenu)}>
-            <button
-              type="button"
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
-              aria-label="User menu"
-              aria-expanded={showProfileMenu}
-            >
-              <Avatar src={user?.avatarUrl} name={user?.fullName} size="md" />
-              <span className="hidden sm:block text-sm font-medium text-gray-700">{user?.fullName}</span>
-            </button>
-
-            {showProfileMenu && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 animate-slide-in">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role?.toLowerCase()}</p>
-                    <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-                  </div>
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => setShowProfileMenu(false)}
-                  >
-                    <UserCircleIcon className="w-5 h-5" />
-                    Profile
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-                  >
-                    <XMarkIcon className="w-5 h-5" />
-                    Sign out
-                  </button>
-                </div>
-              </>
-            )}
+          <div className="hidden lg:flex items-center gap-2">
+            {actions}
           </div>
+
+          <Dropdown
+            trigger={
+              <div className="flex items-center gap-2 p-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                <AvatarGroup max={3} size="sm">
+                  <Avatar name={user?.firstName || 'User'} />
+                </AvatarGroup>
+                {!user ? null : (
+                  <span className="hidden md:block text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">
+                    {user.firstName} {user.lastName}
+                  </span>
+                )}
+              </div>
+            }
+            items={userMenuItems}
+            align="right"
+            width={200}
+          />
         </div>
       </div>
     </header>
-  )
+  );
 }

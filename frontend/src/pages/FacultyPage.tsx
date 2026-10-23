@@ -1,156 +1,221 @@
-import React, { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { facultyApi } from '@services/faculty'
-import { departmentsApi } from '@services/departments'
-import { Card, Button, Input, Select, Table, Badge, LoadingSpinner, useToast, TablePagination } from '@/components/ui'
-import { PaginatedResponse, Faculty, FacultyStatus, Department } from '@/types'
-import { PlusIcon, MagnifyingGlassIcon, FunnelIcon, ArrowPathIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DataTable, Button, Modal, FormField, Card } from '@/components';
+import { api } from '@/services';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { Faculty } from '@/types';
+import { useToast } from '@/contexts';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const facultySchema = z.object({
+  employeeId: z.string().min(1, 'Employee ID is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
+  qualification: z.string().optional(),
+  specialization: z.string().optional(),
+  experienceYears: z.number().optional(),
+  joiningDate: z.string().min(1, 'Joining date is required'),
+  departmentId: z.string().min(1, 'Department is required'),
+  designationId: z.string().min(1, 'Designation is required'),
+});
+
+type FacultyFormData = z.infer<typeof facultySchema>;
 
 export function FacultyPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [faculty, setFaculty] = useState<Faculty[]>([])
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [loading, setLoading] = useState(false)
-  const [totalPages, setTotalPages] = useState(0)
-  const { toast } = useToast()
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const [faculty, setFaculty] = useState<Faculty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<Faculty | null>(null);
+  const [departments, setDepartments] = useState<Array<{id: string; name: string}>>([]);
 
-  const page = parseInt(searchParams.get('page') || '0')
-  const size = parseInt(searchParams.get('size') || '10')
-  const search = searchParams.get('search') || ''
-  const status = searchParams.get('status') || ''
-  const departmentId = searchParams.get('departmentId') || ''
-  const [searchValue, setSearchValue] = useState(search)
-
-  const fetchFaculty = async () => {
-    setLoading(true)
-    try {
-      const params: any = { page, size }
-      if (search) params.search = search
-      if (status) params.status = status
-      if (departmentId) params.departmentId = departmentId
-
-      const response = await facultyApi.getAll(params)
-      setFaculty(response.data.content)
-      setTotalPages(response.data.totalPages)
-    } catch (err) {
-      toast({ type: 'error', title: 'Error', message: 'Failed to load faculty' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await departmentsApi.getActive()
-      setDepartments(response.data)
-    } catch (err) {}
-  }
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<FacultyFormData>({
+    resolver: zodResolver(facultySchema),
+  });
 
   useEffect(() => {
-    fetchFaculty()
-    fetchDepartments()
-  }, [page, size, search, status, departmentId])
+    loadFaculty();
+    loadDepartments();
+  }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const params = new URLSearchParams(searchParams)
-    params.set('search', searchValue)
-    params.set('page', '0')
-    setSearchParams(params)
-  }
+  const loadFaculty = async () => {
+    setLoading(true);
+    try {
+      const response = await api.faculty.getAll({ page: 1, pageSize: 100 });
+      setFaculty(response.data);
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to load faculty' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleFilterChange = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams)
-    if (value) params.set(key, value)
-    else params.delete(key)
-    params.set('page', '0')
-    setSearchParams(params)
-  }
+  const loadDepartments = async () => {
+    try {
+      const depts = await api.departments.getAll();
+      setDepartments(depts.map(d => ({ id: d.id, name: d.name })));
+    } catch (error) {
+      console.error('Failed to load departments:', error);
+    }
+  };
 
-  const clearFilters = () => setSearchParams({})
+  const handleCreate = async (data: FacultyFormData) => {
+    try {
+      await api.faculty.create(data as any);
+      showToast({ type: 'success', title: 'Success', message: 'Faculty created successfully' });
+      setModalOpen(false);
+      reset();
+      loadFaculty();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to create faculty' });
+    }
+  };
 
-  const statusOptions = [
-    { value: '', label: 'All Statuses' },
-    { value: 'ACTIVE', label: 'Active' },
-    { value: 'INACTIVE', label: 'Inactive' },
-    { value: 'ON_LEAVE', label: 'On Leave' },
-    { value: 'RETIRED', label: 'Retired' },
-  ]
+  const handleUpdate = async (data: FacultyFormData) => {
+    if (!editingFaculty) return;
+    try {
+      await api.faculty.update(editingFaculty.id, data as any);
+      showToast({ type: 'success', title: 'Success', message: 'Faculty updated successfully' });
+      setModalOpen(false);
+      setEditingFaculty(null);
+      reset();
+      loadFaculty();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to update faculty' });
+    }
+  };
 
-  const designationOptions = [
-    { value: '', label: 'All Designations' },
-    { value: 'PROFESSOR', label: 'Professor' },
-    { value: 'ASSOCIATE_PROFESSOR', label: 'Associate Professor' },
-    { value: 'ASSISTANT_PROFESSOR', label: 'Assistant Professor' },
-    { value: 'LECTURER', label: 'Lecturer' },
-    { value: 'ADJUNCT', label: 'Adjunct' },
-    { value: 'VISITING', label: 'Visiting' },
-  ]
+  const handleDelete = async () => {
+    if (!deleteConfirm) return;
+    try {
+      await api.faculty.delete(deleteConfirm.id);
+      showToast({ type: 'success', title: 'Success', message: 'Faculty deleted successfully' });
+      setDeleteConfirm(null);
+      loadFaculty();
+    } catch (error) {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to delete faculty' });
+    }
+  };
 
-  const departmentOptions = [
-    { value: '', label: 'All Departments' },
-    ...departments.map(d => ({ value: d.id.toString(), label: d.name })),
-  ]
+  const openEditModal = (fac: Faculty) => {
+    setEditingFaculty(fac);
+    reset({
+      employeeId: fac.employeeId,
+      firstName: fac.firstName,
+      lastName: fac.lastName,
+      email: fac.email,
+      phone: fac.phone || '',
+      dateOfBirth: fac.dateOfBirth || '',
+      gender: fac.gender,
+      qualification: fac.qualification || '',
+      specialization: fac.specialization || '',
+      experienceYears: fac.experienceYears || 0,
+      joiningDate: fac.joiningDate,
+      departmentId: fac.departmentId,
+      designationId: fac.designationId,
+    });
+    setModalOpen(true);
+  };
+
+  const columns = [
+    { key: 'employeeId', header: 'Employee ID', accessor: 'employeeId' },
+    { key: 'name', header: 'Name', accessor: (row: Faculty) => `${row.firstName} ${row.lastName}` },
+    { key: 'email', header: 'Email', accessor: 'email' },
+    { key: 'phone', header: 'Phone', accessor: 'phone' },
+    { key: 'qualification', header: 'Qualification', accessor: 'qualification' },
+    { key: 'specialization', header: 'Specialization', accessor: 'specialization' },
+    { key: 'status', header: 'Status', accessor: 'status', render: (value: string) => (
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${value === 'ACTIVE' ? 'bg-success-100 text-success-700' : value === 'ON_LEAVE' ? 'bg-warning-100 text-warning-700' : 'bg-neutral-100 text-neutral-700'}`}>{value}</span>
+    )},
+    { key: 'actions', header: 'Actions', render: (_, row: Faculty) => (
+      <div className="flex items-center justify-center gap-1">
+        <button onClick={() => openEditModal(row)} className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Edit"><PencilIcon className="h-5 w-5" /></button>
+        <button onClick={() => setDeleteConfirm(row)} className="p-1.5 rounded-lg text-error-500 hover:bg-error-50 dark:hover:bg-error-900/20" aria-label="Delete"><TrashIcon className="h-5 w-5" /></button>
+      </div>
+    )},
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-900">Faculty</h1>
-          <p className="text-gray-500 mt-1">Manage faculty records and assignments</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Faculty</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">Manage faculty records</p>
         </div>
-        <Link to="/faculty/create" className="btn-primary">
-          <PlusIcon className="w-5 h-5 mr-2" />
+        <Button onClick={() => { setEditingFaculty(null); reset(); setModalOpen(true); }}>
+          <PlusIcon className="h-5 w-5" />
           Add Faculty
-        </Link>
+        </Button>
       </div>
 
-      <Card className="p-4">
-        <form onSubmit={(e) => { e.preventDefault(); const params = new URLSearchParams(searchParams); params.set('search', searchValue); params.set('page', '0'); setSearchParams(params) }} className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input type="search" placeholder="Search faculty..." value={searchValue} onChange={(e) => setSearchValue(e.target.value)} className="input pl-10" />
-          </div>
-          <Select options={statusOptions} value={status} onChange={(e) => handleFilterChange('status', e.target.value)} placeholder="All Statuses" className="w-40" />
-          <Select options={designationOptions} value={searchParams.get('designation') || ''} onChange={(e) => handleFilterChange('designation', e.target.value)} placeholder="All Designations" className="w-48" />
-          <Select options={departmentOptions} value={departmentId} onChange={(e) => handleFilterChange('departmentId', e.target.value)} placeholder="All Departments" className="w-48" />
-          {(search || status || departmentId) && <Button type="button" variant="ghost" onClick={() => setSearchParams({})}><ArrowPathIcon className="w-5 h-5 mr-2" /> Clear</Button>}
-        </form>
-      </Card>
+      <DataTable
+        columns={columns}
+        data={faculty}
+        keyAccessor="id"
+        title={`${faculty.length} faculty members`}
+        searchable
+        searchPlaceholder="Search faculty..."
+        loading={loading}
+      />
 
-      <Card>
-        {loading ? <div className="py-12 text-center"><LoadingSpinner size="lg" /></div> : (
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingFaculty(null); reset(); }}
+        title={editingFaculty ? 'Edit Faculty' : 'Add Faculty'}
+        size="lg"
+        footer={
           <>
-            <Table
-              data={faculty}
-              columns={[
-                { key: 'facultyId', header: 'Faculty ID', render: (f) => <span className="font-mono text-sm">{f.facultyId}</span> },
-                { key: 'fullName', header: 'Name', render: (f) => <Link to={`/faculty/${f.id}`} className="font-medium text-gray-900 hover:text-primary-600">{f.fullName}</Link> },
-                { key: 'email', header: 'Email', render: (f) => <span className="text-gray-600">{f.email}</span> },
-                { key: 'departmentName', header: 'Department', render: (f) => <Badge variant="info">{f.departmentName}</Badge> },
-                { key: 'designation', header: 'Designation', render: (f) => <Badge variant="primary">{f.designation}</Badge> },
-                { key: 'status', header: 'Status', render: (f) => <Badge variant={getFacultyStatusVariant(f.status)}>{f.status}</Badge> },
-                { key: 'actions', header: '', render: (f) => <div className="flex items-center gap-2"><Link to={`/faculty/${f.id}`} className="btn-secondary btn-sm">View</Link><Link to={`/faculty/${f.id}/edit`} className="btn-secondary btn-sm">Edit</Link></div> },
-              ]}
-              keyExtractor={(f) => f.id}
-              hoverable
-            />
-            {totalPages > 1 && <TablePagination currentPage={page + 1} totalPages={totalPages} onPageChange={(p) => setSearchParams({ ...Object.fromEntries(searchParams), page: (p - 1).toString() })} />}
+            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditingFaculty(null); reset(); }}>Cancel</Button>
+            <Button onClick={handleSubmit(editingFaculty ? handleUpdate : handleCreate)}>Save</Button>
           </>
-        )}
-      </Card>
+        }
+      >
+        <form onSubmit={handleSubmit(editingFaculty ? handleUpdate : handleCreate)} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField name="employeeId" label="Employee ID" control={control} error={errors.employeeId?.message} />
+            <FormField name="firstName" label="First Name" control={control} error={errors.firstName?.message} />
+            <FormField name="lastName" label="Last Name" control={control} error={errors.lastName?.message} />
+            <FormField name="email" label="Email" type="email" control={control} error={errors.email?.message} />
+            <FormField name="phone" label="Phone" control={control} />
+            <FormField name="dateOfBirth" label="Date of Birth" type="date" control={control} />
+            <FormField name="gender" label="Gender" type="select" options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'OTHER', label: 'Other' }]} control={control} />
+            <FormField name="qualification" label="Qualification" control={control} />
+            <FormField name="specialization" label="Specialization" control={control} />
+            <FormField name="experienceYears" label="Experience (Years)" type="number" control={control} />
+            <FormField name="joiningDate" label="Joining Date" type="date" control={control} error={errors.joiningDate?.message} />
+            <FormField name="departmentId" label="Department" type="select" options={departments.map(d => ({ value: d.id, label: d.name }))} control={control} error={errors.departmentId?.message} />
+            <FormField name="designationId" label="Designation" type="select" options={departments.map(d => ({ value: d.id, label: d.name }))} control={control} error={errors.designationId?.message} />
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        title="Delete Faculty"
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+          </>
+        }
+      >
+        <p>Are you sure you want to delete <strong>{deleteConfirm?.firstName} {deleteConfirm?.lastName}</strong> ({deleteConfirm?.employeeId})? This action cannot be undone.</p>
+      </Modal>
     </div>
-  )
+  );
 }
-
-function getFacultyStatusVariant(status: FacultyStatus): 'success' | 'warning' | 'danger' | 'info' | 'gray' | 'primary' {
-  switch (status) {
-    case 'ACTIVE': return 'success'
-    case 'INACTIVE': return 'gray'
-    case 'ON_LEAVE': return 'warning'
-    case 'RETIRED': return 'gray'
-    default: return 'gray'
-  }
-}
-
-// Duplicate code removed

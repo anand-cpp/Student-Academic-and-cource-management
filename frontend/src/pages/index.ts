@@ -1,7 +1,12 @@
-export { LoginPage } from './LoginPage'
-export { DashboardPage } from './DashboardPage'
-export { StudentsPage } from './StudentsPage'
-export { StudentDetailPage } from './StudentDetailPage'
-export { FacultyPage } from './FacultyPage'
-export { CoursesPage } from './CoursesPage'
-export { EnrollmentsPage, AttendancePage, AssessmentsPage, MarksPage, ReportsPage, SettingsPage } from './OtherPages'
+export { LoginPage } from './LoginPage';
+export { DashboardPage } from './DashboardPage';
+export { StudentsPage } from './StudentsPage';
+export { FacultyPage } from './FacultyPage';
+export { CoursesPage } from './CoursesPage';
+export { EnrollmentsPage } from './EnrollmentsPage';
+export { AttendancePage } from './AttendancePage';
+export { AssessmentsPage } from './AssessmentsPage';
+export { MarksPage } from './MarksPage';
+export { ReportsPage } from './ReportsPage';
+export { StudentDetailPage } from './StudentDetailPage';
+export { OtherPages } from './OtherPages';
