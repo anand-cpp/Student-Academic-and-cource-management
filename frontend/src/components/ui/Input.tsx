@@ -235,7 +235,7 @@ export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   required?: boolean;
 }
 
-export const Label = forwardRef<HTMLLabelElement, LabelProps>(
+const Label = forwardRef<HTMLLabelElement, LabelProps>(
   ({ children, required, className, ...props }, ref) => (
     <label
       ref={ref}
@@ -253,4 +253,4 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(
 
 Label.displayName = 'Label';
 
-export { Input, Textarea };
+export { Input, Textarea, Label };

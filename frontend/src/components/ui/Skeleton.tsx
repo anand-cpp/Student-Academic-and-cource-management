@@ -87,7 +87,7 @@ export interface SkeletonCardProps {
   className?: string;
 }
 
-export function SkeletonCard({ showHeader = true, showAvatar = false, lines = 3, className }: SkeletonCardProps) {
+function SkeletonCard({ showHeader = true, showAvatar = false, lines = 3, className }: SkeletonCardProps) {
   return (
     <div className={cn('p-6 space-y-4 animate-pulse', className)}>
       {showHeader && (
@@ -114,7 +114,7 @@ export interface SkeletonTableProps {
   className?: string;
 }
 
-export function SkeletonTable({ columns = 5, rows = 5, className }: SkeletonTableProps) {
+function SkeletonTable({ columns = 5, rows = 5, className }: SkeletonTableProps) {
   return (
     <div className={cn('overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700', className)}>
       <table className="w-full">
@@ -150,7 +150,7 @@ export interface SkeletonListProps {
   className?: string;
 }
 
-export function SkeletonList({ items = 5, showAvatar = true, lines = 2, className }: SkeletonListProps) {
+function SkeletonList({ items = 5, showAvatar = true, lines = 2, className }: SkeletonListProps) {
   return (
     <div className={cn('space-y-4', className)}>
       {Array.from({ length: items }).map((_, i) => (
@@ -170,4 +170,4 @@ export function SkeletonList({ items = 5, showAvatar = true, lines = 2, classNam
   );
 }
 
-export { Skeleton };
+export { Skeleton, SkeletonCard, SkeletonTable, SkeletonList };

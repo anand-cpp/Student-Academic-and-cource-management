@@ -83,7 +83,7 @@ export interface SpinnerOverlayProps {
   className?: string;
 }
 
-export function SpinnerOverlay({ isVisible, message, size = 'md', className }: SpinnerOverlayProps) {
+function SpinnerOverlay({ isVisible, message, size = 'md', className }: SpinnerOverlayProps) {
   if (!isVisible) return null;
 
   return (
@@ -104,4 +104,4 @@ export function SpinnerOverlay({ isVisible, message, size = 'md', className }: S
   );
 }
 
-export { Spinner };
+export { Spinner, SpinnerOverlay };

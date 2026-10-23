@@ -352,8 +352,8 @@ export interface ToastProps {
 }
 
 export interface DropdownItem {
-  label: string;
-  value: string;
+  label?: string;
+  value?: string;
   icon?: React.ReactNode;
   disabled?: boolean;
   divider?: boolean;

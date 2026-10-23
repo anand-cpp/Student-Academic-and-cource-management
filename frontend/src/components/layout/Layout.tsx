@@ -2,7 +2,7 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
-import { ToastProvider } from '../ui/Toast'
+import { ToastProvider } from '../contexts/ToastContext'
 
 export function Layout() {
   return (

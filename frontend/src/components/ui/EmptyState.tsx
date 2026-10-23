@@ -12,7 +12,7 @@ export interface EmptyStateProps {
   illustration?: 'empty' | 'search' | 'error' | 'offline' | 'permission';
 }
 
-export function EmptyState({
+function EmptyState({
   icon,
   title,
   description,
@@ -80,7 +80,7 @@ export interface ErrorBoundaryProps {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
-export class ErrorBoundary extends React.Component<
+class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   { hasError: boolean; error: Error | null }
 > {
