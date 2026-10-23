@@ -5,7 +5,7 @@ import { Select } from './Select';
 export interface Column<T = unknown> {
   key: string;
   header: string;
-  accessor?: keyof T | ((row: T) => unknown);
+  accessor?: keyof T | ((row: T) => unknown) | string;
   sortable?: boolean;
   filterable?: boolean;
   filterOptions?: Array<{ value: string; label: string }>;
@@ -52,7 +52,7 @@ function TableContainer<T>({
   );
 }
 
-function TableHeader<T>({
+function TableHeader({
   columns,
   sortBy,
   sortOrder,
@@ -64,7 +64,7 @@ function TableHeader<T>({
   compact,
   className,
 }: {
-  columns: Column<T>[];
+  columns: Column[];
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (key: string) => void;
@@ -155,7 +155,7 @@ function TableBody<T>({
   emptyMessage,
   className,
 }: {
-  columns: Column<T>[];
+  columns: Column[];
   data: T[];
   keyAccessor: keyof T | ((row: T) => string);
   selection?: boolean;
@@ -216,7 +216,7 @@ function TableBody<T>({
               const value = column.accessor
                 ? typeof column.accessor === 'function'
                   ? column.accessor(row)
-                  : row[column.accessor]
+                  : (row as Record<string, unknown>)[column.accessor as string]
                 : undefined;
               const rendered = column.render ? column.render(value, row, rowIndex) : value;
 
@@ -236,7 +236,7 @@ function TableBody<T>({
                     column.cellClassName
                   )}
                 >
-                  {rendered ?? '—'}
+                  {rendered == null || (typeof rendered === 'object' && Object.keys(rendered).length === 0) ? '—' : rendered}
                 </td>
               );
             })}
@@ -247,7 +247,7 @@ function TableBody<T>({
   );
 }
 
-function TableFooter<T>({
+function TableFooter({
   columns,
   pagination,
   page,
@@ -259,7 +259,7 @@ function TableFooter<T>({
   total,
   className,
 }: {
-  columns: Column<T>[];
+  columns: Column[];
   pagination?: boolean;
   page: number;
   pageCount: number;
@@ -430,7 +430,7 @@ function Table<T = unknown>({
         const column = columns.find((c) => c.key === key);
         if (column?.accessor) {
           result = result.filter((row) => {
-            const cellValue = typeof column.accessor === 'function' ? column.accessor(row) : row[column.accessor];
+            const cellValue = typeof column.accessor === 'function' ? column.accessor(row) : (row as Record<string, unknown>)[column.accessor as string];
             return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
           });
         }
@@ -442,8 +442,8 @@ function Table<T = unknown>({
       const column = columns.find((c) => c.key === sortBy);
       if (column?.accessor) {
         result.sort((a, b) => {
-          const aVal = typeof column.accessor === 'function' ? column.accessor(a) : a[column.accessor];
-          const bVal = typeof column.accessor === 'function' ? column.accessor(b) : b[column.accessor];
+          const aVal = typeof column.accessor === 'function' ? column.accessor(a) : (a as Record<string, unknown>)[column.accessor as string];
+          const bVal = typeof column.accessor === 'function' ? column.accessor(b) : (b as Record<string, unknown>)[column.accessor as string];
           const comparison = String(aVal).localeCompare(String(bVal), undefined, { numeric: true });
           return sortOrder === 'asc' ? comparison : -comparison;
         });
@@ -467,7 +467,7 @@ function Table<T = unknown>({
     <TableContainer className={className}>
       <table className="w-full" {...props}>
         <TableHeader
-          columns={columns}
+          columns={columns as Column[]}
           sortBy={sortBy}
           sortOrder={sortOrder}
           onSort={handleSort}
@@ -478,11 +478,11 @@ function Table<T = unknown>({
           compact={compact}
         />
         {loading ? (
-          <TableLoading columns={columns} compact={compact} />
+          <TableLoading columns={columns as Column[]} compact={compact} />
         ) : (
           <>
             <TableBody
-              columns={columns}
+              columns={columns as Column[]}
               data={paginatedData}
               keyAccessor={keyAccessor}
               selection={selection}
@@ -494,7 +494,7 @@ function Table<T = unknown>({
               emptyMessage={emptyMessage}
             />
             <TableFooter
-              columns={columns}
+              columns={columns as Column[]}
               pagination={pagination}
               page={page}
               pageCount={pageCount}

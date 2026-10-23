@@ -1,4 +1,4 @@
-import { NavLink as RouterNavLink, NavLinkProps } from 'react-router-dom';
+import { NavLink as RouterNavLink, NavLinkProps, NavLinkRenderProps } from 'react-router-dom';
 import { cn } from '@/utils';
 import { ReactNode } from 'react';
 
@@ -22,7 +22,7 @@ export function NavLink({
     <RouterNavLink
       {...props}
       end={end}
-      className={({ isActive, isPending }) =>
+      className={({ isActive, isPending }: NavLinkRenderProps) =>
         cn(
           'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
@@ -34,11 +34,10 @@ export function NavLink({
           className
         )
       }
-      aria-current={({ isActive }) => isActive ? 'page' : undefined}
       aria-disabled={disabled}
       tabIndex={disabled ? -1 : undefined}
     >
-      {({ isActive }) => (
+      {({ isActive }: NavLinkRenderProps) => (
         <>
           {icon && <span className={cn('flex-shrink-0', isActive ? 'text-brand-600 dark:text-brand-400' : 'text-neutral-400')}>{icon}</span>}
           <span className="truncate">{label}</span>

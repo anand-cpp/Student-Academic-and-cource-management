@@ -92,8 +92,8 @@ export function groupBy<T>(array: T[], key: keyof T | ((item: T) => string)): Re
 
 export function sortBy<T>(array: T[], key: keyof T | ((item: T) => unknown), direction: 'asc' | 'desc' = 'asc'): T[] {
   const sorted = [...array].sort((a, b) => {
-    const aVal = typeof key === 'function' ? key(a) : a[key];
-    const bVal = typeof key === 'function' ? key(b) : b[key];
+    const aVal = typeof key === 'function' ? key(a) : a[key as keyof T];
+    const bVal = typeof key === 'function' ? key(b) : b[key as keyof T];
     if (aVal < bVal) return direction === 'asc' ? -1 : 1;
     if (aVal > bVal) return direction === 'asc' ? 1 : -1;
     return 0;
@@ -102,9 +102,9 @@ export function sortBy<T>(array: T[], key: keyof T | ((item: T) => unknown), dir
 }
 
 export function uniqueBy<T>(array: T[], key: keyof T | ((item: T) => unknown)): T[] {
-  const seen = new Set();
+  const seen = new Set<unknown>();
   return array.filter((item) => {
-    const val = typeof key === 'function' ? key(item) : item[key];
+    const val = typeof key === 'function' ? key(item) : item[key as keyof T];
     if (seen.has(val)) return false;
     seen.add(val);
     return true;

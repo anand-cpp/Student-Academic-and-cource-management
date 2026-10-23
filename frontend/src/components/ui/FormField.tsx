@@ -406,7 +406,7 @@ export interface FileUploadProps {
   label?: string;
   name?: string;
   value?: FileList | File | null;
-  onChange?: (files: FileList | null) => void;
+  onChange?: (files: File[] | null) => void;
   accept?: string;
   multiple?: boolean;
   maxSize?: number;
@@ -451,14 +451,15 @@ export function FileUpload({
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = multiple ? Array.from(e.dataTransfer.files) : e.dataTransfer.files[0];
-      onChange?.(multiple ? Array.from(e.dataTransfer.files) : e.dataTransfer.files[0] ? [e.dataTransfer.files[0]] : null);
+      const files = multiple ? Array.from(e.dataTransfer.files) : [e.dataTransfer.files[0]];
+      onChange?.(files);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onChange?.(multiple ? Array.from(e.target.files) : e.target.files[0] ? [e.target.files[0]] : null);
+      const files = multiple ? Array.from(e.target.files) : [e.target.files[0]];
+      onChange?.(files);
     } else {
       onChange?.(null);
     }
@@ -527,7 +528,7 @@ export function FileUpload({
               </div>
               <button
                 type="button"
-                onClick={() => onChange?.(multiple ? new DataTransfer().files : null)}
+                onClick={() => onChange?.(multiple ? Array.from(new DataTransfer().files) : null)}
                 className="text-neutral-400 hover:text-error-600 dark:hover:text-error-400 transition-colors"
                 aria-label="Remove file"
               >

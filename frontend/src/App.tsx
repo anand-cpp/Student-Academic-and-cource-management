@@ -14,50 +14,50 @@ import {
 } from '@heroicons/react/24/outline';
 import { UserRole } from '@/types';
 
-const roleNavigation = {
+const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon: React.ReactNode }>> = {
   ADMIN: [
-    { label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { label: 'Students', href: '/students', icon: UsersIcon },
-    { label: 'Faculty', href: '/faculty', icon: AcademicCapIcon },
-    { label: 'Courses', href: '/courses', icon: BookOpenIcon },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardDocumentListIcon },
-    { label: 'Attendance', href: '/attendance', icon: CalendarDaysIcon },
-    { label: 'Assessments', href: '/assessments', icon: DocumentTextIcon },
-    { label: 'Marks', href: '/marks', icon: StarIcon },
-    { label: 'Reports', href: '/reports', icon: ChartBarIcon },
-    { label: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
+    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
+    { label: 'Faculty', href: '/faculty', icon: <AcademicCapIcon className="h-5 w-5" /> },
+    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
+    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
+    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
+    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
+    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
+    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
+    { label: 'Settings', href: '/settings', icon: <Cog6ToothIcon className="h-5 w-5" /> },
   ],
   FACULTY: [
-    { label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { label: 'My Courses', href: '/courses', icon: BookOpenIcon },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardDocumentListIcon },
-    { label: 'Attendance', href: '/attendance', icon: CalendarDaysIcon },
-    { label: 'Assessments', href: '/assessments', icon: DocumentTextIcon },
-    { label: 'Marks', href: '/marks', icon: StarIcon },
-    { label: 'Reports', href: '/reports', icon: ChartBarIcon },
+    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
+    { label: 'My Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
+    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
+    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
+    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
+    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
+    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
   ],
   DEPARTMENT_HEAD: [
-    { label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { label: 'Students', href: '/students', icon: UsersIcon },
-    { label: 'Faculty', href: '/faculty', icon: AcademicCapIcon },
-    { label: 'Courses', href: '/courses', icon: BookOpenIcon },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardDocumentListIcon },
-    { label: 'Reports', href: '/reports', icon: ChartBarIcon },
+    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
+    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
+    { label: 'Faculty', href: '/faculty', icon: <AcademicCapIcon className="h-5 w-5" /> },
+    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
+    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
+    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
   ],
   REGISTRAR: [
-    { label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { label: 'Students', href: '/students', icon: UsersIcon },
-    { label: 'Enrollments', href: '/enrollments', icon: ClipboardDocumentListIcon },
-    { label: 'Courses', href: '/courses', icon: BookOpenIcon },
-    { label: 'Reports', href: '/reports', icon: ChartBarIcon },
+    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
+    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
+    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
+    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
+    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
   ],
   STUDENT: [
-    { label: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-    { label: 'My Courses', href: '/courses', icon: BookOpenIcon },
-    { label: 'Attendance', href: '/attendance', icon: CalendarDaysIcon },
-    { label: 'Assessments', href: '/assessments', icon: DocumentTextIcon },
-    { label: 'Marks', href: '/marks', icon: StarIcon },
-    { label: 'Profile', href: '/profile', icon: UserIcon },
+    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
+    { label: 'My Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
+    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
+    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
+    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
+    { label: 'Profile', href: '/profile', icon: <UserIcon className="h-5 w-5" /> },
   ],
 };
 
@@ -107,7 +107,7 @@ function Layout() {
       profile: 'Profile',
     };
 
-    const breadcrumbs = [{ label: 'Home', href: '/' }];
+    const breadcrumbs: Array<{ label: string; href: string; isCurrent?: boolean }> = [{ label: 'Home', href: '/', isCurrent: false }];
     
     let currentPath = '';
     segments.forEach((segment, index) => {
@@ -117,7 +117,7 @@ function Layout() {
       
       breadcrumbs.push({
         label,
-        href: isLast ? undefined : currentPath,
+        href: isLast ? '' : currentPath,
         isCurrent: isLast,
       });
     });
