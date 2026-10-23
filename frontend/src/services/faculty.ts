@@ -1,27 +1,38 @@
 import { api } from './api'
 import { PaginatedResponse } from '../types'
-import type { Faculty, FacultyStatus, FacultyDesignation } from '../types'
+import type { Faculty, FacultyStatus, FilterParams } from '../types'
 
 export const facultyApi = {
-  getAll: (params?: {
-    page?: number
-    size?: number
-    departmentId?: number
-    status?: FacultyStatus
-    search?: string
-  }) => api.get<PaginatedResponse<Faculty>>('/faculty', { params }),
+  getAll: (params?: FilterParams): Promise<PaginatedResponse<Faculty>> => {
+    return api.faculty.getAll(params)
+  },
 
-  getById: (id: number) => api.get<Faculty>(`/faculty/${id}`),
+  getById: (id: string): Promise<Faculty | null> => {
+    return api.faculty.getById(id)
+  },
 
-  getByFacultyId: (facultyId: string) => api.get<Faculty>(`/faculty/faculty-id/${facultyId}`),
+  getByFacultyId: (facultyId: string): Promise<Faculty | null> => {
+    return api.faculty.getById(facultyId)
+  },
 
-  create: (data: any) => api.post<Faculty>('/faculty', data),
+  create: (data: Omit<Faculty, 'id' | 'createdAt' | 'updatedAt'>): Promise<Faculty> => {
+    return api.faculty.create(data)
+  },
 
-  update: (id: number, data: any) => api.put<Faculty>(`/faculty/${id}`, data),
+  update: (id: string, data: Partial<Faculty>): Promise<Faculty> => {
+    return api.faculty.update(id, data)
+  },
 
-  delete: (id: number) => api.delete(`/faculty/${id}`),
+  delete: (id: string): Promise<void> => {
+    return api.faculty.delete(id)
+  },
 
-  changeStatus: (id: number, status: FacultyStatus) => api.patch(`/faculty/${id}/status`, null, { params: { status } }),
+  changeStatus: (id: string, status: FacultyStatus): Promise<Faculty> => {
+    return api.faculty.update(id, { status })
+  },
 
-  getByDepartment: (departmentId: number) => api.get<Faculty[]>(`/faculty/department/${departmentId}`),
+  getByDepartment: async (departmentId: string): Promise<Faculty[]> => {
+    const response = await api.faculty.getAll({ pageSize: 1000 })
+    return response.data.filter(f => f.departmentId === departmentId)
+  },
 }

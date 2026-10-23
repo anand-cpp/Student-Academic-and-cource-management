@@ -1,29 +1,43 @@
 import { api } from './api'
 import { PaginatedResponse } from '../types'
-import type { Student, StudentStatus } from '../types'
+import type { Student, StudentStatus, FilterParams } from '../types'
 
 export const studentsApi = {
-  getAll: (params?: {
-    page?: number
-    size?: number
-    departmentId?: number
-    status?: StudentStatus
-    search?: string
-  }) => api.get<PaginatedResponse<Student>>('/students', { params }),
+  getAll: (params?: FilterParams): Promise<PaginatedResponse<Student>> => {
+    return api.students.getAll(params)
+  },
 
-  getById: (id: number) => api.get<Student>(`/students/${id}`),
+  getById: (id: string): Promise<Student | null> => {
+    return api.students.getById(id)
+  },
 
-  getByStudentId: (studentId: string) => api.get<Student>(`/students/student-id/${studentId}`),
+  getByStudentId: (studentId: string): Promise<Student | null> => {
+    return api.students.getById(studentId)
+  },
 
-  create: (data: any) => api.post<Student>('/students', data),
+  create: (data: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>): Promise<Student> => {
+    return api.students.create(data)
+  },
 
-  update: (id: number, data: any) => api.put<Student>(`/students/${id}`, data),
+  update: (id: string, data: Partial<Student>): Promise<Student> => {
+    return api.students.update(id, data)
+  },
 
-  delete: (id: number) => api.delete(`/students/${id}`),
+  delete: (id: string): Promise<void> => {
+    return api.students.delete(id)
+  },
 
-  changeStatus: (id: number, status: StudentStatus) => api.patch(`/students/${id}/status`, null, { params: { status } }),
+  changeStatus: (id: string, status: StudentStatus): Promise<Student> => {
+    return api.students.update(id, { status })
+  },
 
-  countByDepartment: (departmentId: number) => api.get<number>(`/students/count/department/${departmentId}`),
+  countByDepartment: async (departmentId: string): Promise<number> => {
+    const response = await api.students.getAll({ pageSize: 1000 })
+    return response.data.filter(s => s.departmentId === departmentId).length
+  },
 
-  countByStatus: (status: StudentStatus) => api.get<number>(`/students/count/status/${status}`),
+  countByStatus: async (status: StudentStatus): Promise<number> => {
+    const response = await api.students.getAll({ pageSize: 1000 })
+    return response.data.filter(s => s.status === status).length
+  },
 }

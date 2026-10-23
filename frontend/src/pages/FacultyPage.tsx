@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DataTable, Button, Modal, FormField, Card } from '@/components';
+import { useEffect, useState, useMemo } from 'react';
+import { Card, Button, Modal, Badge, Avatar } from '@/components/ui';
 import { api } from '@/services';
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  PencilIcon,
+  TrashIcon,
+  AcademicCapIcon,
+  BriefcaseIcon,
+  EnvelopeIcon,
+  PhoneIcon,
+  FunnelIcon,
+} from '@heroicons/react/24/outline';
 import { Faculty } from '@/types';
 import { useToast } from '@/contexts';
 import { useForm } from 'react-hook-form';
@@ -27,18 +36,32 @@ const facultySchema = z.object({
 
 type FacultyFormData = z.infer<typeof facultySchema>;
 
+const DESIGNATIONS = [
+  { value: 'PROFESSOR', label: 'Full Professor' },
+  { value: 'ASSOCIATE_PROFESSOR', label: 'Associate Professor' },
+  { value: 'ASSISTANT_PROFESSOR', label: 'Assistant Professor' },
+  { value: 'LECTURER', label: 'Senior Lecturer' },
+  { value: 'INSTRUCTOR', label: 'Instructor' },
+];
+
 export function FacultyPage() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
   const [faculty, setFaculty] = useState<Faculty[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingFaculty, setEditingFaculty] = useState<Faculty | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Faculty | null>(null);
-  const [departments, setDepartments] = useState<Array<{id: string; name: string}>>([]);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [designationFilter, setDesignationFilter] = useState('ALL');
+
+  // Reference data
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string }>>([]);
 
   const {
-    control,
+    register,
     handleSubmit,
     reset,
     formState: { errors },
@@ -56,8 +79,8 @@ export function FacultyPage() {
     try {
       const response = await api.faculty.getAll({ page: 1, pageSize: 100 });
       setFaculty(response.data);
-    } catch (error) {
-      showToast({ type: 'error', title: 'Error', message: 'Failed to load faculty' });
+    } catch {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to load faculty directory' });
     } finally {
       setLoading(false);
     }
@@ -66,7 +89,7 @@ export function FacultyPage() {
   const loadDepartments = async () => {
     try {
       const depts = await api.departments.getAll();
-      setDepartments(depts.map(d => ({ id: d.id, name: d.name })));
+      setDepartments(depts.map((d) => ({ id: d.id, name: d.name })));
     } catch (error) {
       console.error('Failed to load departments:', error);
     }
@@ -74,27 +97,30 @@ export function FacultyPage() {
 
   const handleCreate = async (data: FacultyFormData) => {
     try {
-      await api.faculty.create(data as any);
-      showToast({ type: 'success', title: 'Success', message: 'Faculty created successfully' });
+      await api.faculty.create({
+        ...data,
+        status: 'ACTIVE',
+      });
+      showToast({ type: 'success', title: 'Success', message: 'Faculty member appointed successfully' });
       setModalOpen(false);
       reset();
       loadFaculty();
-    } catch (error) {
-      showToast({ type: 'error', title: 'Error', message: 'Failed to create faculty' });
+    } catch {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to add faculty record' });
     }
   };
 
   const handleUpdate = async (data: FacultyFormData) => {
     if (!editingFaculty) return;
     try {
-      await api.faculty.update(editingFaculty.id, data as any);
-      showToast({ type: 'success', title: 'Success', message: 'Faculty updated successfully' });
+      await api.faculty.update(editingFaculty.id, data);
+      showToast({ type: 'success', title: 'Success', message: 'Faculty record updated successfully' });
       setModalOpen(false);
       setEditingFaculty(null);
       reset();
       loadFaculty();
-    } catch (error) {
-      showToast({ type: 'error', title: 'Error', message: 'Failed to update faculty' });
+    } catch {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to update faculty record' });
     }
   };
 
@@ -102,11 +128,11 @@ export function FacultyPage() {
     if (!deleteConfirm) return;
     try {
       await api.faculty.delete(deleteConfirm.id);
-      showToast({ type: 'success', title: 'Success', message: 'Faculty deleted successfully' });
+      showToast({ type: 'success', title: 'Success', message: 'Faculty member record removed' });
       setDeleteConfirm(null);
       loadFaculty();
-    } catch (error) {
-      showToast({ type: 'error', title: 'Error', message: 'Failed to delete faculty' });
+    } catch {
+      showToast({ type: 'error', title: 'Error', message: 'Failed to delete faculty record' });
     }
   };
 
@@ -130,92 +156,391 @@ export function FacultyPage() {
     setModalOpen(true);
   };
 
-  const columns = [
-    { key: 'employeeId', header: 'Employee ID', accessor: 'employeeId' },
-    { key: 'name', header: 'Name', accessor: (row: Faculty) => `${row.firstName} ${row.lastName}` },
-    { key: 'email', header: 'Email', accessor: 'email' },
-    { key: 'phone', header: 'Phone', accessor: 'phone' },
-    { key: 'qualification', header: 'Qualification', accessor: 'qualification' },
-    { key: 'specialization', header: 'Specialization', accessor: 'specialization' },
-    { key: 'status', header: 'Status', accessor: 'status', render: (value: string) => (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${value === 'ACTIVE' ? 'bg-success-100 text-success-700' : value === 'ON_LEAVE' ? 'bg-warning-100 text-warning-700' : 'bg-neutral-100 text-neutral-700'}`}>{value}</span>
-    )},
-    { key: 'actions', header: 'Actions', render: (_, row: Faculty) => (
-      <div className="flex items-center justify-center gap-1">
-        <button onClick={() => openEditModal(row)} className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label="Edit"><PencilIcon className="h-5 w-5" /></button>
-        <button onClick={() => setDeleteConfirm(row)} className="p-1.5 rounded-lg text-error-500 hover:bg-error-50 dark:hover:bg-error-900/20" aria-label="Delete"><TrashIcon className="h-5 w-5" /></button>
-      </div>
-    )},
-  ];
+  const filteredFaculty = useMemo(() => {
+    return faculty.filter((f) => {
+      const matchSearch =
+        search === '' ||
+        f.firstName.toLowerCase().includes(search.toLowerCase()) ||
+        f.lastName.toLowerCase().includes(search.toLowerCase()) ||
+        f.employeeId.toLowerCase().includes(search.toLowerCase()) ||
+        f.specialization?.toLowerCase().includes(search.toLowerCase()) ||
+        f.email.toLowerCase().includes(search.toLowerCase());
+
+      const matchDept = departmentFilter === 'ALL' || f.departmentId === departmentFilter;
+      const matchDesig = designationFilter === 'ALL' || f.designationId === designationFilter;
+
+      return matchSearch && matchDept && matchDesig;
+    });
+  }, [faculty, search, departmentFilter, designationFilter]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 animate-fadeIn">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-50">Faculty</h1>
-          <p className="text-neutral-500 dark:text-neutral-400">Manage faculty records</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+              Faculty Roster
+            </h1>
+            <Badge variant="brand" size="md">
+              {filteredFaculty.length} Professors
+            </Badge>
+          </div>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Teaching staff, professorial designations, research interests, and departmental affiliations.
+          </p>
         </div>
-        <Button onClick={() => { setEditingFaculty(null); reset(); setModalOpen(true); }}>
-          <PlusIcon className="h-5 w-5" />
-          Add Faculty
+
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditingFaculty(null);
+            reset({
+              employeeId: `FAC00${faculty.length + 1}`,
+              firstName: '',
+              lastName: '',
+              email: '',
+              phone: '',
+              qualification: 'Ph.D. in Computer Science',
+              specialization: 'Artificial Intelligence & Systems',
+              experienceYears: 5,
+              joiningDate: new Date().toISOString().split('T')[0],
+              departmentId: departments[0]?.id || '1',
+              designationId: 'PROFESSOR',
+            });
+            setModalOpen(true);
+          }}
+          leftIcon={<PlusIcon className="h-4 w-4" />}
+        >
+          Appoint Faculty
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={faculty}
-        keyAccessor="id"
-        title={`${faculty.length} faculty members`}
-        searchable
-        searchPlaceholder="Search faculty..."
-        loading={loading}
-      />
+      {/* Filter and Search Toolbar */}
+      <Card padding="sm">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by faculty name, specialization, or ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
 
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <FunnelIcon className="h-4 w-4" />
+              <span>Dept:</span>
+            </div>
+            <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="ALL">All Departments</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={designationFilter}
+              onChange={(e) => setDesignationFilter(e.target.value)}
+              className="px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="ALL">All Designations</option>
+              {DESIGNATIONS.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Faculty Cards Grid */}
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="h-56 animate-pulse bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+          ))}
+        </div>
+      ) : filteredFaculty.length === 0 ? (
+        <Card className="p-12 text-center space-y-3">
+          <AcademicCapIcon className="h-8 w-8 text-slate-400 mx-auto" />
+          <p className="font-bold text-slate-700 dark:text-slate-300">No faculty members found.</p>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredFaculty.map((f) => {
+            const dept = departments.find((d) => d.id === f.departmentId)?.name || 'General Academic';
+            return (
+              <Card
+                key={f.id}
+                variant="interactive"
+                className="flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={`${f.firstName} ${f.lastName}`}
+                        size="md"
+                        variant="circle"
+                      />
+                      <div>
+                        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                          Prof. {f.firstName} {f.lastName}
+                        </h3>
+                        <span className="font-mono text-[11px] text-slate-400">
+                          {f.employeeId}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant={f.status === 'ACTIVE' ? 'success' : 'default'} size="sm" dot>
+                      {f.status}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                    <p className="font-semibold text-brand-600 dark:text-brand-400">
+                      {f.designationId?.replace('_', ' ')} • {dept}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {f.qualification}
+                    </p>
+                    <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 mt-2">
+                      <span className="text-[10px] text-slate-400 block font-semibold uppercase">Specialization:</span>
+                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-1">
+                        {f.specialization || 'General Engineering & Science'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 text-slate-400">
+                    <EnvelopeIcon className="h-3.5 w-3.5" />
+                    <span className="truncate max-w-[140px]">{f.email}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(f)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Edit Faculty Record"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm(f)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Delete Faculty"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add / Edit Faculty Modal */}
       <Modal
         isOpen={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingFaculty(null); reset(); }}
-        title={editingFaculty ? 'Edit Faculty' : 'Add Faculty'}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingFaculty(null);
+          reset();
+        }}
+        title={editingFaculty ? `Edit Faculty: ${editingFaculty.employeeId}` : 'Appoint New Faculty Member'}
         size="lg"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => { setModalOpen(false); setEditingFaculty(null); reset(); }}>Cancel</Button>
-            <Button onClick={handleSubmit(editingFaculty ? handleUpdate : handleCreate)}>Save</Button>
-          </>
-        }
       >
         <form onSubmit={handleSubmit(editingFaculty ? handleUpdate : handleCreate)} className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField name="employeeId" label="Employee ID" control={control} error={errors.employeeId?.message} />
-            <FormField name="firstName" label="First Name" control={control} error={errors.firstName?.message} />
-            <FormField name="lastName" label="Last Name" control={control} error={errors.lastName?.message} />
-            <FormField name="email" label="Email" type="email" control={control} error={errors.email?.message} />
-            <FormField name="phone" label="Phone" control={control} />
-            <FormField name="dateOfBirth" label="Date of Birth" type="date" control={control} />
-            <FormField name="gender" label="Gender" type="select" options={[{ value: 'MALE', label: 'Male' }, { value: 'FEMALE', label: 'Female' }, { value: 'OTHER', label: 'Other' }]} control={control} />
-            <FormField name="qualification" label="Qualification" control={control} />
-            <FormField name="specialization" label="Specialization" control={control} />
-            <FormField name="experienceYears" label="Experience (Years)" type="number" control={control} />
-            <FormField name="joiningDate" label="Joining Date" type="date" control={control} error={errors.joiningDate?.message} />
-            <FormField name="departmentId" label="Department" type="select" options={departments.map(d => ({ value: d.id, label: d.name }))} control={control} error={errors.departmentId?.message} />
-            <FormField name="designationId" label="Designation" type="select" options={departments.map(d => ({ value: d.id, label: d.name }))} control={control} error={errors.designationId?.message} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Employee ID
+              </label>
+              <input
+                type="text"
+                {...register('employeeId')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+              {errors.employeeId && <p className="text-[11px] text-rose-500 mt-1">{errors.employeeId.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                {...register('email')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+              {errors.email && <p className="text-[11px] text-rose-500 mt-1">{errors.email.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                First Name
+              </label>
+              <input
+                type="text"
+                {...register('firstName')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+              {errors.firstName && <p className="text-[11px] text-rose-500 mt-1">{errors.firstName.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                {...register('lastName')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+              {errors.lastName && <p className="text-[11px] text-rose-500 mt-1">{errors.lastName.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Department
+              </label>
+              <select
+                {...register('departmentId')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Designation
+              </label>
+              <select
+                {...register('designationId')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              >
+                {DESIGNATIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Qualification
+              </label>
+              <input
+                type="text"
+                {...register('qualification')}
+                placeholder="e.g. Ph.D. Computer Science, Stanford"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Specialization
+              </label>
+              <input
+                type="text"
+                {...register('specialization')}
+                placeholder="e.g. Artificial Intelligence, Neural Networks"
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Experience (Years)
+              </label>
+              <input
+                type="number"
+                {...register('experienceYears', { valueAsNumber: true })}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Appointment Date
+              </label>
+              <input
+                type="date"
+                {...register('joiningDate')}
+                className="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setModalOpen(false);
+                setEditingFaculty(null);
+                reset();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">
+              {editingFaculty ? 'Save Updates' : 'Confirm Appointment'}
+            </Button>
           </div>
         </form>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
-        title="Delete Faculty"
+        title="Confirm Faculty Record Deletion"
         size="sm"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
-          </>
-        }
       >
-        <p>Are you sure you want to delete <strong>{deleteConfirm?.firstName} {deleteConfirm?.lastName}</strong> ({deleteConfirm?.employeeId})? This action cannot be undone.</p>
+        <div className="space-y-4">
+          <p className="text-xs text-slate-600 dark:text-slate-300">
+            Are you sure you want to remove faculty record for{' '}
+            <strong className="text-slate-900 dark:text-white">
+              Prof. {deleteConfirm?.firstName} {deleteConfirm?.lastName}
+            </strong>{' '}
+            ({deleteConfirm?.employeeId})?
+          </p>
+          <div className="flex items-center justify-end gap-2.5 pt-2">
+            <Button variant="secondary" onClick={() => setDeleteConfirm(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleDelete}>
+              Delete Record
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
 }
+
+export default FacultyPage;

@@ -9,4 +9,7 @@ export { AssessmentsPage } from './AssessmentsPage';
 export { MarksPage } from './MarksPage';
 export { ReportsPage } from './ReportsPage';
 export { StudentDetailPage } from './StudentDetailPage';
+export { SettingsPage } from './SettingsPage';
+export { ProfilePage } from './ProfilePage';
+export { AccessDeniedPage } from './AccessDeniedPage';
 export { OtherPages } from './OtherPages';
