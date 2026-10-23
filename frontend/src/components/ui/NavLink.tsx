@@ -24,13 +24,13 @@ export function NavLink({
       end={end}
       className={({ isActive, isPending }: NavLinkRenderProps) =>
         cn(
-          'flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
+          'flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
           disabled
-            ? 'text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+            ? 'text-surface-400 dark:text-surface-500 cursor-not-allowed'
             : isActive
-            ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300'
-            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800',
+            ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300'
+            : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800',
           className
         )
       }
@@ -39,14 +39,12 @@ export function NavLink({
     >
       {({ isActive }: NavLinkRenderProps) => (
         <>
-          {icon && <span className={cn('flex-shrink-0', isActive ? 'text-brand-600 dark:text-brand-400' : 'text-neutral-400')}>{icon}</span>}
+          {icon && <span className={cn('flex-shrink-0', isActive ? 'text-primary-700 dark:text-primary-300' : 'text-surface-600 dark:text-surface-400')}>{icon}</span>}
           <span className="truncate">{label}</span>
           {badge && (
             <span className={cn(
               'ml-auto px-2 py-0.5 text-xs font-medium rounded-full',
-              isActive
-                ? 'bg-brand-100 dark:bg-brand-900/50 text-brand-700 dark:text-brand-300'
-                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+              isActive ? 'bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400'
             )}>
               {badge}
             </span>

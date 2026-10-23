@@ -46,21 +46,21 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const baseStyles = `
       w-full
       font-sans
-      rounded-md
+      rounded-lg
       transition-colors duration-200
-      text-neutral-900 dark:text-neutral-50
-      bg-white dark:bg-neutral-900
+      text-surface-950 dark:text-surface-50
+      bg-surface-container-lowest dark:bg-surface-900
       disabled:opacity-50 disabled:cursor-not-allowed
-      focus-visible:outline-none focus-visible:ring-3
+      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary-500/25
       appearance-none
-      bg-[url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")] bg-[length:1.5rem_1.5rem] bg-[right_0.5rem_center] bg-no-repeat
+      bg-[url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23717975' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")] bg-[length:1.5rem_1.5rem] bg-[right_0.5rem_center] bg-no-repeat
       pr-10
     `;
 
     const variants = {
-      default: 'border border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
-      filled: 'bg-neutral-100 border border-transparent hover:bg-neutral-200 focus:bg-white focus:border-brand-500 focus:ring-brand-500/25 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:focus:bg-neutral-900',
-      outlined: 'border-2 border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
+      default: 'border border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
+      filled: 'bg-surface-100 border border-transparent hover:bg-surface-200 focus:bg-surface-container-lowest focus:border-primary-500 focus:ring-primary-500/25 dark:bg-surface-800 dark:hover:bg-surface-700 dark:focus:bg-surface-900',
+      outlined: 'border-2 border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
     };
 
     const sizes = {
@@ -79,7 +79,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <label
             htmlFor={selectId}
             className={cn(
-              'block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5',
+              'block text-sm font-medium text-surface-700 dark:text-surface-400 mb-1.5',
               required && 'after:content-["*"] after:ml-0.5 after:text-error-500'
             )}
           >

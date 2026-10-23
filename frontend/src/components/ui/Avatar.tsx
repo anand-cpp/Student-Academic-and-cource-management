@@ -28,7 +28,7 @@ const statusPositions = {
 
 const statusColors = {
   online: 'bg-success-500',
-  offline: 'bg-neutral-400',
+  offline: 'bg-surface-400',
   busy: 'bg-error-500',
   away: 'bg-warning-500',
 };
@@ -39,6 +39,7 @@ export interface AvatarProps extends HTMLAttributes<HTMLDivElement> {
   name?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   shape?: 'circle' | 'square';
+  variant?: string;
   status?: 'online' | 'offline' | 'busy' | 'away';
   statusPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
@@ -66,7 +67,7 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
     }, [name]);
 
     const bgColor = useMemo(() => {
-      if (!name) return 'bg-neutral-400';
+      if (!name) return 'bg-surface-300';
       let hash = 0;
       for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -90,7 +91,7 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
           />
         ) : (
           <div
-            className="h-full w-full flex items-center justify-center font-medium text-white select-none"
+            className="h-full w-full flex items-center justify-center font-medium text-surface-950 select-none"
             style={{ backgroundColor: bgColor }}
             aria-label={name || 'User avatar'}
           >
@@ -100,7 +101,7 @@ const Avatar = forwardRef<HTMLDivElement, AvatarProps>(
         {status && (
           <span
             className={cn(
-              'absolute rounded-full border-2 border-white dark:border-neutral-900',
+              'absolute rounded-full border-2 border-white dark:border-surface-950',
               statusSizes[size],
               statusColors[status],
               statusPositions[statusPosition]
@@ -142,9 +143,8 @@ const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(
           {remainingCount > 0 && (
             <div
               className={cn(
-                'relative z-0 flex items-center justify-center font-medium text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-800 border-2 border-white dark:border-neutral-900',
+                'relative z-0 flex items-center justify-center font-medium text-surface-600 dark:text-surface-400 bg-surface-container-lowest border border-surface-200 dark:border-surface-700 rounded-full',
                 sizes[size],
-                'rounded-full',
                 '-ml-2'
               )}
               aria-label={`${remainingCount} more people`}

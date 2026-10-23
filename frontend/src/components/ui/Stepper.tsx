@@ -41,10 +41,10 @@ export function Stepper({
           const stepColor = isError
             ? 'bg-error-100 border-error-500 text-error-600'
             : isCompleted
-            ? 'bg-brand-500 border-brand-500 text-white'
+            ? 'bg-primary-600 border-primary-600 text-on-primary'
             : isActive
-            ? 'bg-brand-100 border-brand-500 text-brand-700'
-            : 'bg-white border-neutral-300 text-neutral-400 dark:border-neutral-600 dark:bg-neutral-800';
+            ? 'bg-primary-100 border-primary-600 text-primary-700'
+            : 'bg-surface-container-lowest dark:bg-surface-900 border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-400';
 
           return (
             <div key={step.label} className={cn('relative flex', isVertical ? 'flex-col items-start w-full' : 'flex-1')}>
@@ -53,7 +53,7 @@ export function Stepper({
                   <div
                     className={cn(
                       'h-full rounded',
-                      isCompleted ? 'bg-brand-500' : 'bg-neutral-200 dark:bg-neutral-700'
+                      isCompleted ? 'bg-primary-600' : 'bg-surface-200 dark:bg-surface-800'
                     )}
                     style={{ width: `${((index + 1) / steps.length) * 100}%` }}
                   />
@@ -64,7 +64,7 @@ export function Stepper({
                   <div
                     className={cn(
                       'h-full rounded',
-                      isCompleted ? 'bg-brand-500' : 'bg-neutral-200 dark:bg-neutral-700'
+                      isCompleted ? 'bg-primary-600' : 'bg-surface-200 dark:bg-surface-800'
                     )}
                   />
                 </div>
@@ -87,12 +87,12 @@ export function Stepper({
                 <div className={cn('min-w-0', isVertical ? 'flex-1' : 'mt-2 text-center')}>
                   <p className={cn(
                     'font-medium text-sm truncate',
-                    isError ? 'text-error-600' : isActive ? 'text-brand-700 dark:text-brand-300' : 'text-neutral-900 dark:text-neutral-50'
+                    isError ? 'text-error-600' : isActive ? 'text-primary-700 dark:text-primary-300' : 'text-surface-950 dark:text-surface-50'
                   )}>
                     {step.label}
                   </p>
                   {step.description && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                    <p className="text-xs text-surface-600 dark:text-surface-400 truncate mt-0.5">
                       {step.description}
                     </p>
                   )}

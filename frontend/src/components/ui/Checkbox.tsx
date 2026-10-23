@@ -44,14 +44,14 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       transition-colors duration-200
       cursor-pointer
       flex-shrink-0
-      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-500/25
+      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary-500/25
       disabled:opacity-50 disabled:cursor-not-allowed
-      ${indeterminate ? 'bg-brand-500 border-brand-500' : 'bg-white border-neutral-300'}
-      ${indeterminate ? 'hover:bg-brand-600 hover:border-brand-600' : 'hover:border-brand-400'}
+      ${indeterminate ? 'bg-primary-500 border-primary-500' : 'bg-surface-container-lowest dark:bg-surface-900 border-surface-300 dark:border-surface-700'}
+      ${indeterminate ? 'hover:bg-primary-700 hover:border-primary-700' : 'hover:border-primary-500'}
     `;
 
     const variantStyles = variant === 'rounded' ? 'rounded-full' : 'rounded-sm';
-    const checkedStyles = indeterminate ? '' : 'checked:bg-brand-500 checked:border-brand-500 checked:hover:bg-brand-600 checked:hover:border-brand-600';
+    const checkedStyles = indeterminate ? '' : 'checked:bg-primary-600 checked:border-primary-600 checked:hover:bg-primary-700 checked:hover:border-primary-700';
     const errorStyles = error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/25' : '';
 
     return (
@@ -70,7 +70,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             {...props}
           />
           {indeterminate && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-surface-50">
               <svg className="h-2 w-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
               </svg>
@@ -82,7 +82,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             <label
               htmlFor={checkboxId}
               className={cn(
-                'block text-sm font-medium text-neutral-900 dark:text-neutral-50 cursor-pointer',
+                'block text-sm font-medium text-surface-950 dark:text-surface-50 cursor-pointer',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -90,7 +90,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             </label>
           )}
           {description && (
-            <p id={`${checkboxId}-desc`} className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+            <p id={`${checkboxId}-desc`} className="mt-0.5 text-sm text-surface-600 dark:text-surface-400">
               {description}
             </p>
           )}
@@ -142,17 +142,17 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
 
     const baseStyles = `
       appearance-none
-      border-2 border-neutral-300
+      border-2 border-surface-300
       rounded-full
       transition-colors duration-200
       cursor-pointer
       flex-shrink-0
-      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-500/25
+      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary-500/25
       disabled:opacity-50 disabled:cursor-not-allowed
-      bg-white
-      checked:border-brand-500
-      checked:after:content-[''] checked:after:block checked:after:w-1.5 checked:after:h-1.5 checked:after:bg-brand-500 checked:after:rounded-full checked:after:mt-[2px] checked:after:ml-[2px]
-      hover:border-brand-400
+      bg-surface-container-lowest
+      checked:border-primary-500
+      checked:after:content-[''] checked:after:block checked:after:w-1.5 checked:after:h-1.5 checked:after:bg-primary-600 checked:after:rounded-full checked:after:mt-[2px] checked:after:ml-[2px]
+      hover:border-primary-500
     `;
 
     const errorStyles = error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/25' : '';
@@ -177,7 +177,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
             <label
               htmlFor={radioId}
               className={cn(
-                'block text-sm font-medium text-neutral-900 dark:text-neutral-50 cursor-pointer',
+                'block text-sm font-medium text-surface-950 dark:text-surface-50 cursor-pointer',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -185,7 +185,7 @@ const Radio = forwardRef<HTMLInputElement, RadioProps>(
             </label>
           )}
           {description && (
-            <p id={`${radioId}-desc`} className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+            <p id={`${radioId}-desc`} className="mt-0.5 text-sm text-surface-600 dark:text-surface-400">
               {description}
             </p>
           )}
@@ -233,14 +233,14 @@ export function RadioGroup({
     <fieldset className={cn('w-full', orientation === 'horizontal' ? 'flex flex-wrap gap-6' : 'space-y-3')} aria-describedby={describedBy}>
       {label && (
         <legend className={cn(
-          'text-sm font-medium text-neutral-900 dark:text-neutral-50 mb-2',
+          'text-sm font-medium text-surface-950 dark:text-surface-50 mb-2',
           required && 'after:content-["*"] after:ml-0.5 after:text-error-500'
         )}>
           {label}
         </legend>
       )}
       {description && (
-        <p id={`${groupId}-desc`} className="text-sm text-neutral-500 dark:text-neutral-400 mb-2">
+        <p id={`${groupId}-desc`} className="text-sm text-surface-600 dark:text-surface-400 mb-2">
           {description}
         </p>
       )}
@@ -320,13 +320,13 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       rounded-full
       border-2
       transition-colors duration-200
-      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-500/25
+      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary-500/25
       disabled:opacity-50 disabled:cursor-not-allowed
-      bg-neutral-300
-      checked:bg-brand-500
-      checked:border-brand-500
-      hover:bg-neutral-400
-      checked:hover:bg-brand-600
+      bg-surface-300
+      checked:bg-primary-600
+      checked:border-primary-600
+      hover:bg-surface-400
+      checked:hover:bg-primary-700
     `;
 
     const errorStyles = error ? 'border-error-500 focus:border-error-500 focus:ring-error-500/25' : '';
@@ -364,7 +364,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             <label
               htmlFor={switchId}
               className={cn(
-                'block text-sm font-medium text-neutral-900 dark:text-neutral-50 cursor-pointer',
+                'block text-sm font-medium text-surface-950 dark:text-surface-50 cursor-pointer',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
@@ -372,7 +372,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
             </label>
           )}
           {description && (
-            <p id={`${switchId}-desc`} className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+            <p id={`${switchId}-desc`} className="mt-0.5 text-sm text-surface-600 dark:text-surface-400">
               {description}
             </p>
           )}

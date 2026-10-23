@@ -22,7 +22,7 @@ const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
     },
     ref
   ) => {
-    const baseStyles = 'bg-neutral-200 dark:bg-neutral-700 rounded overflow-hidden';
+    const baseStyles = 'bg-surface-200 dark:bg-surface-700 rounded overflow-hidden';
     
     const animations = {
       pulse: 'animate-pulse',
@@ -116,10 +116,10 @@ export interface SkeletonTableProps {
 
 function SkeletonTable({ columns = 5, rows = 5, className }: SkeletonTableProps) {
   return (
-    <div className={cn('overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700', className)}>
+    <div className={cn('overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800', className)}>
       <table className="w-full">
         <thead>
-          <tr className="bg-neutral-50 dark:bg-neutral-800/50">
+          <tr className="bg-surface-100 dark:bg-surface-800/50">
             {Array.from({ length: columns }).map((_, i) => (
               <th key={i} className="px-4 py-3 text-left">
                 <Skeleton variant="text" width="80%" height={12} />
@@ -127,9 +127,9 @@ function SkeletonTable({ columns = 5, rows = 5, className }: SkeletonTableProps)
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+        <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={rowIndex} className={rowIndex % 2 === 1 ? 'bg-neutral-50 dark:bg-neutral-800/30' : ''}>
+            <tr key={rowIndex} className={rowIndex % 2 === 1 ? 'bg-surface-50 dark:bg-surface-800/30' : ''}>
               {Array.from({ length: columns }).map((_, colIndex) => (
                 <td key={colIndex} className="px-4 py-3">
                   <Skeleton variant="text" width="90%" height={16} />
@@ -154,7 +154,7 @@ function SkeletonList({ items = 5, showAvatar = true, lines = 2, className }: Sk
   return (
     <div className={cn('space-y-4', className)}>
       {Array.from({ length: items }).map((_, i) => (
-        <div key={i} className="flex items-start gap-4 p-4 bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-700 animate-pulse">
+        <div key={i} className="flex items-start gap-4 p-4 bg-surface-container-lowest dark:bg-surface-900 rounded-xl border border-surface-200 dark:border-surface-800 animate-pulse">
           {showAvatar && <Skeleton variant="circular" width={48} height={48} />}
           <div className="flex-1 space-y-2 min-w-0">
             <Skeleton variant="text" width="30%" height={20} />

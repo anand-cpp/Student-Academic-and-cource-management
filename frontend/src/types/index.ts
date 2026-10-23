@@ -34,13 +34,19 @@ export interface AttendanceRecord {
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  username?: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   role: UserRole;
   avatar?: string;
+  avatarUrl?: string;
   departmentId?: string;
-  createdAt: string;
-  updatedAt: string;
+  studentId?: string;
+  facultyId?: string;
+  phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
   lastLoginAt?: string;
 }
 
@@ -290,6 +296,8 @@ export interface StatCardData {
   icon?: string;
   color?: 'primary' | 'success' | 'warning' | 'error' | 'info';
 }
+
+export type Column<T = unknown> = TableColumn<T>;
 
 export interface TableColumn<T = unknown> {
   key: string;

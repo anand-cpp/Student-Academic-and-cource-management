@@ -95,28 +95,28 @@ export function Modal({
               onClose();
             }
           }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-black/50 backdrop-blur-md transition-opacity"
           aria-hidden="true"
         />
         <div
           ref={modalRef}
           tabIndex={-1}
           className={cn(
-            'relative w-full bg-white dark:bg-neutral-900 rounded-xl shadow-2xl transform transition-all',
+            'relative w-full bg-surface-container-lowest rounded-2xl shadow-xl transform transition-all',
             'animate-scale-in',
             sizes[size]
           )}
         >
           {(title || showCloseButton) && (
-            <div className="flex items-start justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <div className="flex items-start justify-between px-6 py-4 border-b border-surface-200 dark:border-surface-800">
               <div>
                 {title && (
-                  <h2 id="modal-title" className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+                  <h2 id="modal-title" className="text-lg font-semibold text-surface-950 dark:text-surface-50">
                     {title}
                   </h2>
                 )}
                 {description && (
-                  <p id="modal-description" className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  <p id="modal-description" className="mt-1 text-sm text-surface-600 dark:text-surface-400">
                     {description}
                   </p>
                 )}
@@ -124,7 +124,7 @@ export function Modal({
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="p-1 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  className="p-1 rounded-lg text-surface-600 hover:text-surface-950 dark:text-surface-400 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   aria-label="Close modal"
                 >
                   <XMarkIcon className="h-5 w-5" />
@@ -136,7 +136,7 @@ export function Modal({
             {children}
           </div>
           {footer && (
-            <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 border-t border-surface-200 dark:border-surface-800 flex items-center justify-end gap-3">
               {footer}
             </div>
           )}
@@ -190,7 +190,7 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-neutral-600 dark:text-neutral-400">{message}</p>
+      <p className="text-surface-600 dark:text-surface-400">{message}</p>
     </Modal>
   );
 }

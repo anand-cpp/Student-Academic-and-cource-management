@@ -84,7 +84,7 @@ export function Dropdown({
         <div
           ref={dropdownRef}
           className={cn(
-            'absolute z-50 mt-2 min-w-[160px] bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg',
+            'absolute z-50 mt-2 min-w-[160px] bg-surface-container-lowest rounded-lg border border-surface-200 dark:bg-surface-900 dark:border-surface-800 shadow-lg',
             'animate-fade-in animate-slide-down',
             align === 'right' ? 'right-0' : 'left-0',
             width === 'trigger' ? 'w-full' : width !== 'auto' ? `w-[${width}px]` : '',
@@ -95,7 +95,7 @@ export function Dropdown({
         >
           {items.map((item, index) => (
             item.divider ? (
-              <div key={`${index}-divider`} className="h-px bg-neutral-200 dark:bg-neutral-700 my-1" role="separator" />
+              <div key={`${index}-divider`} className="h-px bg-surface-200 dark:bg-surface-700 my-1" role="separator" />
             ) : (
               <button
                 key={`${index}-${item.value || item.label}`}
@@ -104,12 +104,12 @@ export function Dropdown({
                 disabled={item.disabled}
                 className={cn(
                   'w-full px-4 py-2 text-left text-sm transition-colors',
-                  'focus-visible:outline-none focus-visible:bg-neutral-100 dark:focus-visible:bg-neutral-800',
+                  'focus-visible:outline-none focus-visible:bg-surface-200 dark:focus-visible:bg-surface-800',
                   item.disabled
-                    ? 'text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                    ? 'text-surface-400 dark:text-surface-500 cursor-not-allowed'
                     : item.danger
                     ? 'text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20'
-                    : 'text-neutral-900 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                    : 'text-surface-950 dark:text-surface-50 hover:bg-surface-100 dark:hover:bg-surface-800'
                 )}
                 role="menuitem"
                 tabIndex={-1}
@@ -168,7 +168,7 @@ export function DropdownMenu({
     <div
       ref={menuRef}
       className={cn(
-        'fixed z-50 min-w-[160px] bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-lg',
+        'fixed z-50 min-w-[160px] bg-surface-container-lowest rounded-lg border border-surface-200 dark:bg-surface-900 dark:border-surface-800 shadow-lg',
         'animate-fade-in animate-slide-down',
         className
       )}
@@ -182,7 +182,7 @@ export function DropdownMenu({
     >
       {items.map((item, index) => (
         item.divider ? (
-          <div key={`${index}-divider`} className="h-px bg-neutral-200 dark:bg-neutral-700 my-1" role="separator" />
+          <div key={`${index}-divider`} className="h-px bg-surface-200 dark:bg-surface-700 my-1" role="separator" />
         ) : (
           <button
             key={`${index}-${item.value || item.label}`}
@@ -194,12 +194,12 @@ export function DropdownMenu({
             disabled={item.disabled}
             className={cn(
               'w-full px-4 py-2 text-left text-sm transition-colors',
-              'focus-visible:outline-none focus-visible:bg-neutral-100 dark:focus-visible:bg-neutral-800',
+              'focus-visible:outline-none focus-visible:bg-surface-200 dark:focus-visible:bg-surface-800',
               item.disabled
-                ? 'text-neutral-400 dark:text-neutral-500 cursor-not-allowed'
+                ? 'text-surface-400 dark:text-surface-500 cursor-not-allowed'
                 : item.danger
                 ? 'text-error-600 hover:bg-error-50 dark:hover:bg-error-900/20'
-                : 'text-neutral-900 dark:text-neutral-50 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                : 'text-surface-950 dark:text-surface-50 hover:bg-surface-100 dark:hover:bg-surface-800'
             )}
             role="menuitem"
             tabIndex={-1}

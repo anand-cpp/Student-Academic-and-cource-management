@@ -30,22 +30,22 @@ export function Tabs({
 }: TabsProps) {
   const variants = {
     line: {
-      container: 'border-b border-neutral-200 dark:border-neutral-700',
+      container: 'border-b border-surface-200 dark:border-surface-800',
       tab: 'border-b-2 -mb-px',
-      active: 'border-brand-500 text-brand-600 dark:text-brand-400',
-      inactive: 'border-transparent text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300',
+      active: 'border-primary-600 text-primary-600 dark:text-primary-300',
+      inactive: 'border-transparent text-surface-600 hover:text-surface-950 dark:text-surface-400 dark:hover:text-surface-300',
     },
     enclosed: {
       container: '',
-      tab: 'rounded-md',
-      active: 'bg-brand-500 text-white shadow-sm',
-      inactive: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:text-neutral-400',
+      tab: 'rounded-lg',
+      active: 'bg-primary-600 text-on-primary shadow-sm',
+      inactive: 'text-surface-600 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-800',
     },
     soft: {
       container: '',
-      tab: 'rounded-md',
-      active: 'bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300',
-      inactive: 'text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:text-neutral-400',
+      tab: 'rounded-lg',
+      active: 'bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300',
+      inactive: 'text-surface-600 hover:bg-surface-200 dark:text-surface-400 dark:hover:bg-surface-800',
     },
   };
 
@@ -74,7 +74,7 @@ export function Tabs({
             onClick={() => !tab.disabled && onChange(tab.value)}
             className={cn(
               'inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-200',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
               v.tab,
               value === tab.value ? v.active : v.inactive,
               tab.disabled && 'opacity-50 cursor-not-allowed',
@@ -85,7 +85,7 @@ export function Tabs({
             {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
             {tab.label}
             {tab.badge && (
-              <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300">
+              <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-surface-200 dark:bg-surface-700 text-surface-700 dark:text-surface-300">
                 {tab.badge}
               </span>
             )}

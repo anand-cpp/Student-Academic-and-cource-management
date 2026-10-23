@@ -40,19 +40,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const baseStyles = `
       w-full
       font-sans
-      rounded-md
+      rounded-lg
       transition-colors duration-200
-      text-neutral-900 dark:text-neutral-50
-      bg-white dark:bg-neutral-900
-      placeholder:text-neutral-400
+      text-surface-950 dark:text-surface-50
+      bg-surface-container-lowest dark:bg-surface-900
+      placeholder:text-surface-400
       disabled:opacity-50 disabled:cursor-not-allowed
-      focus-visible:outline-none focus-visible:ring-3
+      focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-primary-500/25
     `;
 
     const variants = {
-      default: 'border border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
-      filled: 'bg-neutral-100 border border-transparent hover:bg-neutral-200 focus:bg-white focus:border-brand-500 focus:ring-brand-500/25 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:focus:bg-neutral-900',
-      outlined: 'border-2 border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
+      default: 'border border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
+      filled: 'bg-surface-100 border border-transparent hover:bg-surface-200 focus:bg-surface-container-lowest focus:border-primary-500 focus:ring-primary-500/25 dark:bg-surface-800 dark:hover:bg-surface-700 dark:focus:bg-surface-900',
+      outlined: 'border-2 border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
     };
 
     const sizes = {
@@ -77,7 +77,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           <label
             htmlFor={inputId}
             className={cn(
-              'block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5',
+              'block text-sm font-medium text-surface-700 dark:text-surface-400 mb-1.5',
               required && 'after:content-["*"] after:ml-0.5 after:text-error-500'
             )}
           >
@@ -86,7 +86,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-neutral-400">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-surface-400">
               {leftIcon}
             </div>
           )}
@@ -108,7 +108,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-neutral-400">
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-surface-400">
               {rightIcon}
             </div>
           )}
@@ -165,20 +165,20 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const baseStyles = `
       w-full
       font-sans
-      rounded-md
+      rounded-lg
       transition-colors duration-200
-      text-neutral-900 dark:text-neutral-50
-      bg-white dark:bg-neutral-900
-      placeholder:text-neutral-400
+      text-surface-950 dark:text-surface-50
+      bg-surface-container-lowest dark:bg-surface-900
+      placeholder:text-surface-400
       resize-y min-h-[80px]
       disabled:opacity-50 disabled:cursor-not-allowed
       focus-visible:outline-none focus-visible:ring-3
     `;
 
     const variants = {
-      default: 'border border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
-      filled: 'bg-neutral-100 border border-transparent hover:bg-neutral-200 focus:bg-white focus:border-brand-500 focus:ring-brand-500/25 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:focus:bg-neutral-900',
-      outlined: 'border-2 border-neutral-300 hover:border-neutral-400 focus:border-brand-500 focus:ring-brand-500/25 dark:border-neutral-600 dark:hover:border-neutral-500',
+      default: 'border border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
+      filled: 'bg-surface-100 border border-transparent hover:bg-surface-200 focus:bg-surface-container-lowest focus:border-primary-500 focus:ring-primary-500/25 dark:bg-surface-800 dark:hover:bg-surface-700 dark:focus:bg-surface-900',
+      outlined: 'border-2 border-surface-300 hover:border-surface-400 focus:border-primary-500 focus:ring-primary-500/25 dark:border-surface-700 dark:hover:border-surface-600',
     };
 
     const sizes = {
@@ -197,7 +197,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           <label
             htmlFor={textareaId}
             className={cn(
-              'block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5',
+              'block text-sm font-medium text-surface-700 dark:text-surface-400 mb-1.5',
               required && 'after:content-["*"] after:ml-0.5 after:text-error-500'
             )}
           >
@@ -240,7 +240,7 @@ const Label = forwardRef<HTMLLabelElement, LabelProps>(
     <label
       ref={ref}
       className={cn(
-        'block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5',
+        'block text-sm font-medium text-surface-700 dark:text-surface-400 mb-1.5',
         required && 'after:content-["*"] after:ml-0.5 after:text-error-500',
         className
       )}

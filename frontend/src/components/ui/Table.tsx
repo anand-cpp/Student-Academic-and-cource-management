@@ -46,7 +46,7 @@ function TableContainer<T>({
   ...props
 }: HTMLAttributes<HTMLDivElement> & { children: ReactNode }) {
   return (
-    <div className={cn('overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700', className)} {...props}>
+    <div className={cn('overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800', className)} {...props}>
       {children}
     </div>
   );
@@ -76,7 +76,7 @@ function TableHeader({
   className?: string;
 }) {
   return (
-    <thead className={cn('bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700', className)}>
+    <thead className={cn('bg-surface-100 dark:bg-surface-800 border-b border-surface-200 dark:border-surface-800', className)}>
       <tr>
         {selection && (
           <th className={cn('px-4 py-3', compact && 'py-2')}>
@@ -84,7 +84,7 @@ function TableHeader({
               type="checkbox"
               checked={false}
               onChange={(e) => onSelectAll?.(e.target.checked)}
-              className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+              className="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500 dark:border-surface-700 dark:text-primary-300"
               aria-label="Select all rows"
             />
           </th>
@@ -100,9 +100,9 @@ function TableHeader({
               textAlign: column.align,
             }}
             className={cn(
-              'px-4 py-3 text-left font-semibold text-xs text-neutral-500 dark:text-neutral-400 uppercase tracking-wider',
+              'px-4 py-3 text-left font-semibold text-xs text-surface-600 dark:text-surface-400 uppercase tracking-wider',
               'whitespace-nowrap',
-              column.sortable && 'cursor-pointer select-none hover:bg-neutral-100 dark:hover:bg-neutral-800',
+              column.sortable && 'cursor-pointer select-none hover:bg-surface-100 dark:hover:bg-surface-800',
               compact && 'py-2',
               column.headerClassName
             )}
@@ -169,13 +169,13 @@ function TableBody<T>({
   emptyMessage?: string;
   className?: string;
 }) {
-  const getKey = (row: T) => (typeof keyAccessor === 'function' ? keyAccessor(row) : String(row[keyAccessor]));
+  const getKey = (row: T) => (typeof keyAccessor === 'function' ? keyAccessor(row) : String(row[keyAccessor as keyof T]));
 
   if (data.length === 0) {
     return (
       <tbody className={cn(className)}>
         <tr>
-          <td colSpan={columns.length + (selection ? 1 : 0)} className="px-4 py-12 text-center text-neutral-500 dark:text-neutral-400">
+          <td colSpan={columns.length + (selection ? 1 : 0)} className="px-4 py-12 text-center text-surface-500 dark:text-surface-400">
             {emptyMessage || 'No data available'}
           </td>
         </tr>
@@ -184,7 +184,7 @@ function TableBody<T>({
   }
 
   return (
-    <tbody className={cn('divide-y divide-neutral-200 dark:divide-neutral-700', className)}>
+    <tbody className={cn('divide-y divide-surface-200 dark:divide-surface-800', className)}>
       {data.map((row, rowIndex) => {
         const rowKey = getKey(row);
         const isSelected = selectedKeys?.includes(rowKey);
@@ -194,9 +194,9 @@ function TableBody<T>({
             key={rowKey}
             className={cn(
               'transition-colors',
-              isSelected && 'bg-brand-50 dark:bg-brand-900/20',
-              striped && rowIndex % 2 === 1 && 'bg-neutral-50 dark:bg-neutral-800/30',
-              hoverable && 'hover:bg-neutral-50 dark:hover:bg-neutral-800/30',
+              isSelected && 'bg-primary-50 dark:bg-primary-900/20',
+              striped && rowIndex % 2 === 1 && 'bg-surface-50 dark:bg-surface-800/30',
+              hoverable && 'hover:bg-surface-100 dark:hover:bg-surface-800/30',
               onRowClick && 'cursor-pointer'
             )}
             onClick={() => onRowClick?.(row)}
@@ -207,7 +207,7 @@ function TableBody<T>({
                   type="checkbox"
                   checked={isSelected}
                   onChange={(e) => onSelectionChange?.(rowKey, e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-surface-300 text-primary-600 focus:ring-primary-500 dark:border-surface-700 dark:text-primary-300"
                   aria-label={`Select row ${rowIndex + 1}`}
                 />
               </td>
@@ -230,13 +230,13 @@ function TableBody<T>({
                     textAlign: column.align,
                   }}
                   className={cn(
-                    'px-4 py-3 text-sm text-neutral-900 dark:text-neutral-50',
+                    'px-4 py-3 text-sm text-surface-950 dark:text-surface-50',
                     'whitespace-nowrap',
                     compact && 'py-2',
                     column.cellClassName
                   )}
                 >
-                  {rendered == null || (typeof rendered === 'object' && Object.keys(rendered).length === 0) ? '—' : rendered}
+                  {rendered == null || (typeof rendered === 'object' && Object.keys(rendered).length === 0) ? '—' : (rendered as React.ReactNode)}
                 </td>
               );
             })}
@@ -273,12 +273,12 @@ function TableFooter({
   if (!pagination) return null;
 
   return (
-    <tfoot className={cn('bg-neutral-50 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700', className)}>
+    <tfoot className={cn('bg-surface-100 dark:bg-surface-800 border-t border-surface-200 dark:border-surface-800', className)}>
       <tr>
         <td colSpan={columns.length} className="px-4 py-3">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              <span className="text-sm text-surface-600 dark:text-surface-400">
                 Showing <strong>{(page - 1) * pageSize + 1}</strong> to <strong>{Math.min(page * pageSize, total)}</strong> of <strong>{total}</strong> results
               </span>
               {pageSizeOptions && pageSizeOptions.length > 1 && (
@@ -296,7 +296,7 @@ function TableFooter({
               <button
                 onClick={() => onPageChange?.(1)}
                 disabled={page === 1}
-                className="p-2 rounded-md border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-md border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="First page"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
@@ -304,18 +304,18 @@ function TableFooter({
               <button
                 onClick={() => onPageChange?.(page - 1)}
                 disabled={page === 1}
-                className="p-2 rounded-md border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-md border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Previous page"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <span className="px-3 text-sm text-neutral-700 dark:text-neutral-300">
+              <span className="px-3 text-sm text-surface-700 dark:text-surface-300">
                 Page <strong>{page}</strong> of <strong>{pageCount}</strong>
               </span>
               <button
                 onClick={() => onPageChange?.(page + 1)}
                 disabled={page === pageCount}
-                className="p-2 rounded-md border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-md border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Next page"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -323,7 +323,7 @@ function TableFooter({
               <button
                 onClick={() => onPageChange?.(pageCount)}
                 disabled={page === pageCount}
-                className="p-2 rounded-md border border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-md border border-surface-300 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Last page"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 12l7 7-7 7" /></svg>
@@ -351,7 +351,7 @@ function TableLoading({
         <tr key={i} className={cn('animate-pulse', compact && 'py-2')}>
           {columns.map((column) => (
             <td key={column.key} className={cn('px-4 py-3', compact && 'py-2')}>
-              <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4 animate-pulse" />
+              <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded w-3/4 animate-pulse" />
             </td>
           ))}
         </tr>
@@ -388,7 +388,7 @@ function Table<T = unknown>({
   const [filters, setFilters] = useState<Record<string, unknown>>({});
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
-  const getKey = (row: T) => (typeof keyAccessor === 'function' ? keyAccessor(row) : String(row[keyAccessor]));
+  const getKey = (row: T) => (typeof keyAccessor === 'function' ? keyAccessor(row) : String(row[keyAccessor as keyof T]));
 
   const handleSort = (key: string) => {
     if (!sortable) return;

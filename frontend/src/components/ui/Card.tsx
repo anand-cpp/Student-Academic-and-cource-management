@@ -2,31 +2,32 @@ import { forwardRef, HTMLAttributes } from 'react';
 import { cn } from '@/utils';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'interactive';
+  variant?: 'default' | 'elevated' | 'outlined' | 'filled' | 'interactive' | 'glass';
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const Card = forwardRef<HTMLDivElement, CardProps>(
+export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ children, variant = 'default', padding = 'md', className, ...props }, ref) => {
     const variants = {
-      default: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm',
-      elevated: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-md',
-      outlined: 'bg-white dark:bg-neutral-900 border-2 border-neutral-200 dark:border-neutral-700',
-      filled: 'bg-neutral-50 dark:bg-neutral-800 border-none',
-      interactive: 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer',
+      default: 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm',
+      elevated: 'bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 shadow-md hover:shadow-lg transition-shadow duration-200',
+      outlined: 'bg-transparent border border-slate-300 dark:border-slate-700',
+      filled: 'bg-slate-100/80 dark:bg-slate-800/60 border border-transparent',
+      interactive: 'bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-brand-500/50 dark:hover:border-brand-400/50 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer',
+      glass: 'glass-panel shadow-sm',
     };
 
     const paddings = {
       none: '',
-      sm: 'p-4',
-      md: 'p-6',
-      lg: 'p-8',
+      sm: 'p-3 sm:p-4',
+      md: 'p-4 sm:p-6',
+      lg: 'p-6 sm:p-8',
     };
 
     return (
       <div
         ref={ref}
-        className={cn('rounded-xl', variants[variant], paddings[padding], className)}
+        className={cn('rounded-2xl transition-colors', variants[variant], paddings[padding], className)}
         {...props}
       >
         {children}
@@ -37,13 +38,13 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
 
 Card.displayName = 'Card';
 
-export interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardHeaderProps = HTMLAttributes<HTMLDivElement>;
 
-const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
+export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ children, className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mb-4', className)}
+      className={cn('mb-4 flex flex-col space-y-1.5', className)}
       {...props}
     >
       {children}
@@ -53,13 +54,13 @@ const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
 
 CardHeader.displayName = 'CardHeader';
 
-export interface CardTitleProps extends HTMLAttributes<HTMLHeadingElement> {}
+export type CardTitleProps = HTMLAttributes<HTMLHeadingElement>;
 
-const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
+export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ children, className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold text-neutral-900 dark:text-neutral-50', className)}
+      className={cn('text-lg font-bold tracking-tight text-slate-900 dark:text-slate-50', className)}
       {...props}
     >
       {children}
@@ -69,13 +70,13 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
 
 CardTitle.displayName = 'CardTitle';
 
-export interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {}
+export type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 
-const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
+export const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ children, className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn('mt-1 text-sm text-neutral-500 dark:text-neutral-400', className)}
+      className={cn('text-sm text-slate-500 dark:text-slate-400', className)}
       {...props}
     >
       {children}
@@ -85,9 +86,9 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
 
 CardDescription.displayName = 'CardDescription';
 
-export interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardContentProps = HTMLAttributes<HTMLDivElement>;
 
-const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
+export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
   ({ children, className, ...props }, ref) => (
     <div
       ref={ref}
@@ -101,13 +102,13 @@ const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
 
 CardContent.displayName = 'CardContent';
 
-export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {}
+export type CardFooterProps = HTMLAttributes<HTMLDivElement>;
 
-const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
   ({ children, className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('mt-4 flex items-center justify-end gap-3', className)}
+      className={cn('mt-5 flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800', className)}
       {...props}
     >
       {children}
@@ -117,4 +118,4 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
 
 CardFooter.displayName = 'CardFooter';
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+export default Card;

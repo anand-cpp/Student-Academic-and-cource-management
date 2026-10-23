@@ -90,13 +90,30 @@ export function groupBy<T>(array: T[], key: keyof T | ((item: T) => string)): Re
   }, {} as Record<string, T[]>);
 }
 
+function compareValues(a: unknown, b: unknown): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return -1;
+  if (b == null) return 1;
+  
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b;
+  }
+  if (typeof a === 'string' && typeof b === 'string') {
+    return a.localeCompare(b);
+  }
+  if (a instanceof Date && b instanceof Date) {
+    return a.getTime() - b.getTime();
+  }
+  
+  return String(a).localeCompare(String(b));
+}
+
 export function sortBy<T>(array: T[], key: keyof T | ((item: T) => unknown), direction: 'asc' | 'desc' = 'asc'): T[] {
   const sorted = [...array].sort((a, b) => {
-    const aVal = typeof key === 'function' ? key(a) : a[key as keyof T];
-    const bVal = typeof key === 'function' ? key(b) : b[key as keyof T];
-    if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-    if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-    return 0;
+    const aVal = typeof key === 'function' ? key(a) : (a as Record<string, unknown>)[key as string];
+    const bVal = typeof key === 'function' ? key(b) : (b as Record<string, unknown>)[key as string];
+    const result = compareValues(aVal, bVal);
+    return direction === 'asc' ? result : -result;
   });
   return sorted;
 }
@@ -104,7 +121,7 @@ export function sortBy<T>(array: T[], key: keyof T | ((item: T) => unknown), dir
 export function uniqueBy<T>(array: T[], key: keyof T | ((item: T) => unknown)): T[] {
   const seen = new Set<unknown>();
   return array.filter((item) => {
-    const val = typeof key === 'function' ? key(item) : item[key as keyof T];
+    const val = typeof key === 'function' ? key(item) : (item as Record<string, unknown>)[key as string];
     if (seen.has(val)) return false;
     seen.add(val);
     return true;
@@ -132,3 +149,5 @@ export function pick<T extends Record<string, unknown>, K extends keyof T>(obj: 
   });
   return result;
 }
+
+export * from './routes';

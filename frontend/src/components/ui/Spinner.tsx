@@ -11,7 +11,7 @@ const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
   (
     {
       size = 'md',
-      variant = 'default',
+      variant = 'primary',
       thickness = 3,
       className,
       'aria-label': ariaLabel = 'Loading',
@@ -28,9 +28,9 @@ const Spinner = forwardRef<HTMLDivElement, SpinnerProps>(
     };
 
     const variants = {
-      default: 'text-brand-500',
-      primary: 'text-brand-500',
-      white: 'text-white',
+      default: 'text-primary-600',
+      primary: 'text-primary-600',
+      white: 'text-surface-50',
     };
 
     return (
@@ -89,16 +89,16 @@ function SpinnerOverlay({ isVisible, message, size = 'md', className }: SpinnerO
   return (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm',
+        'fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/90 dark:bg-surface-950/90 backdrop-blur-sm',
         className
       )}
       role="status"
       aria-live="polite"
       aria-label={message || 'Loading'}
     >
-      <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-white dark:bg-neutral-900 shadow-lg border border-neutral-200 dark:border-neutral-700">
+      <div className="flex flex-col items-center gap-3 p-6 rounded-xl bg-surface-container-lowest dark:bg-surface-900 shadow-lg border border-surface-200 dark:border-surface-800">
         <Spinner size={size} />
-        {message && <p className="text-sm text-neutral-600 dark:text-neutral-400">{message}</p>}
+        {message && <p className="text-sm text-surface-600 dark:text-surface-400">{message}</p>}
       </div>
     </div>
   );

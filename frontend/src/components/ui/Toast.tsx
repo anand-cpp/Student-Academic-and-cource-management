@@ -77,14 +77,14 @@ function ToastComponent({
         <Icon className="h-5 w-5" aria-hidden="true" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-neutral-900 dark:text-neutral-50">{title}</p>
+        <p className="text-sm font-medium text-surface-950 dark:text-surface-50">{title}</p>
         {message && (
-          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">{message}</p>
+          <p className="mt-1 text-sm text-surface-600 dark:text-surface-400">{message}</p>
         )}
         {action && (
           <button
             onClick={action.onClick}
-            className="mt-2 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 underline"
+            className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 underline"
           >
             {action.label}
           </button>
@@ -95,7 +95,7 @@ function ToastComponent({
           setVisible(false);
           setTimeout(() => onClose(id), 300);
         }}
-        className="flex-shrink-0 p-1 rounded-lg text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+        className="flex-shrink-0 p-1 rounded-lg text-surface-600 hover:text-surface-950 dark:text-surface-400 dark:hover:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-800 transition-colors"
         aria-label="Dismiss"
       >
         <XMarkIcon className="h-5 w-5" />
