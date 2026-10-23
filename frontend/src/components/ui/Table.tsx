@@ -511,7 +511,5 @@ export function Table<T = unknown>({
   );
 }
 
-import { useState, useMemo } from 'react';
-
 export { Table, TableContainer, TableHeader, TableBody, TableFooter, TableLoading };
 export { Table as DataTable };
