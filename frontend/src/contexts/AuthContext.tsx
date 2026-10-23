@@ -1,11 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, UserRole } from '@/types';
+import { api } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (usernameOrEmail: string, password: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   updateUser: (user: Partial<User>) => void;
@@ -13,105 +14,102 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MOCK_USERS: Record<string, User> = {
-  'admin@university.edu': {
-    id: '1',
-    email: 'admin@university.edu',
-    firstName: 'Admin',
-    lastName: 'User',
-    role: 'ADMIN',
-    departmentId: '1',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  'faculty@university.edu': {
-    id: '2',
-    email: 'faculty@university.edu',
-    firstName: 'John',
-    lastName: 'Smith',
-    role: 'FACULTY',
-    departmentId: '1',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  'student@university.edu': {
-    id: '3',
-    email: 'student@university.edu',
-    firstName: 'Jane',
-    lastName: 'Doe',
-    role: 'STUDENT',
-    departmentId: '1',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  'hod@university.edu': {
-    id: '4',
-    email: 'hod@university.edu',
-    firstName: 'Robert',
-    lastName: 'Johnson',
-    role: 'DEPARTMENT_HEAD',
-    departmentId: '1',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  'registrar@university.edu': {
-    id: '5',
-    email: 'registrar@university.edu',
-    firstName: 'Mary',
-    lastName: 'Williams',
-    role: 'REGISTRAR',
-    departmentId: '1',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        localStorage.removeItem('user');
+    let mounted = true;
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('accessToken');
+      const storedUser = localStorage.getItem('user');
+
+      if (!storedToken || !storedUser) {
+        if (mounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
       }
-    }
-    setIsLoading(false);
+
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
+        });
+
+        if (res.ok) {
+          const verifiedUser = await res.json();
+          if (mounted) {
+            const finalUser: User = {
+              id: String(verifiedUser.id),
+              email: verifiedUser.email,
+              username: verifiedUser.username,
+              fullName: verifiedUser.fullName,
+              firstName: verifiedUser.fullName?.split(' ')[0] || 'User',
+              lastName: verifiedUser.fullName?.split(' ').slice(1).join(' ') || '',
+              role: verifiedUser.role,
+              studentId: verifiedUser.studentId,
+              facultyId: verifiedUser.facultyId,
+            };
+            setUser(finalUser);
+            localStorage.setItem('user', JSON.stringify(finalUser));
+          }
+        } else if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          if (mounted) setUser(null);
+        } else {
+          if (mounted) setUser(JSON.parse(storedUser));
+        }
+      } catch {
+        try {
+          if (mounted) setUser(JSON.parse(storedUser));
+        } catch {
+          localStorage.removeItem('user');
+          if (mounted) setUser(null);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    const mockUser = MOCK_USERS[email];
-    if (mockUser && password === 'password123') {
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      return;
-    }
-    
-    throw new Error('Invalid credentials');
+  const login = useCallback(async (usernameOrEmail: string, password: string) => {
+    const loggedInUser = await api.auth.login(usernameOrEmail, password);
+    setUser(loggedInUser);
   }, []);
 
   const logout = useCallback(() => {
+    api.auth.logout();
     setUser(null);
-    localStorage.removeItem('user');
   }, []);
 
-  const hasRole = useCallback((roles: UserRole[]) => {
-    if (!user) return false;
-    return roles.includes(user.role);
-  }, [user]);
+  const hasRole = useCallback(
+    (roles: UserRole[]) => {
+      if (!user) return false;
+      return roles.includes(user.role);
+    },
+    [user]
+  );
 
-  const updateUser = useCallback((updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
-  }, [user]);
+  const updateUser = useCallback(
+    (updates: Partial<User>) => {
+      if (user) {
+        const updated = { ...user, ...updates };
+        setUser(updated);
+        localStorage.setItem('user', JSON.stringify(updated));
+      }
+    },
+    [user]
+  );
 
   return (
     <AuthContext.Provider
@@ -137,3 +135,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

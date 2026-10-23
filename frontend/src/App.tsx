@@ -1,65 +1,33 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/contexts/ToastContext';
 import { ToastContainer } from '@/components/ui';
-import { LoginPage, DashboardPage, StudentsPage, FacultyPage, CoursesPage, EnrollmentsPage, AttendancePage, AssessmentsPage, MarksPage, ReportsPage, StudentDetailPage, OtherPages } from '@/pages';
-import { Sidebar, Header } from '@/components/layout';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useState } from 'react';
-import { cn } from '@/utils';
-import { 
-  HomeIcon, UsersIcon, AcademicCapIcon, BookOpenIcon, ClipboardDocumentListIcon, 
-  CalendarDaysIcon, DocumentTextIcon, StarIcon, ChartBarIcon, Cog6ToothIcon, UserIcon
-} from '@heroicons/react/24/outline';
+import {
+  LoginPage,
+  DashboardPage,
+  StudentsPage,
+  FacultyPage,
+  CoursesPage,
+  EnrollmentsPage,
+  AttendancePage,
+  AssessmentsPage,
+  MarksPage,
+  ReportsPage,
+  StudentDetailPage,
+  SettingsPage,
+  ProfilePage,
+  AccessDeniedPage,
+} from '@/pages';
+import {
+  AdminDashboard,
+  FacultyDashboard,
+  StudentDashboard,
+  DeptHeadDashboard,
+  RegistrarDashboard,
+} from '@/components/dashboard';
+import { Layout } from '@/components/layout/Layout';
 import { UserRole } from '@/types';
-
-const roleNavigation: Record<UserRole, Array<{ label: string; href: string; icon: React.ReactNode }>> = {
-  ADMIN: [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
-    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
-    { label: 'Faculty', href: '/faculty', icon: <AcademicCapIcon className="h-5 w-5" /> },
-    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
-    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
-    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
-    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
-    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
-    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
-    { label: 'Settings', href: '/settings', icon: <Cog6ToothIcon className="h-5 w-5" /> },
-  ],
-  FACULTY: [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
-    { label: 'My Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
-    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
-    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
-    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
-    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
-    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
-  ],
-  DEPARTMENT_HEAD: [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
-    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
-    { label: 'Faculty', href: '/faculty', icon: <AcademicCapIcon className="h-5 w-5" /> },
-    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
-    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
-    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
-  ],
-  REGISTRAR: [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
-    { label: 'Students', href: '/students', icon: <UsersIcon className="h-5 w-5" /> },
-    { label: 'Enrollments', href: '/enrollments', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
-    { label: 'Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
-    { label: 'Reports', href: '/reports', icon: <ChartBarIcon className="h-5 w-5" /> },
-  ],
-  STUDENT: [
-    { label: 'Dashboard', href: '/dashboard', icon: <HomeIcon className="h-5 w-5" /> },
-    { label: 'My Courses', href: '/courses', icon: <BookOpenIcon className="h-5 w-5" /> },
-    { label: 'Attendance', href: '/attendance', icon: <CalendarDaysIcon className="h-5 w-5" /> },
-    { label: 'Assessments', href: '/assessments', icon: <DocumentTextIcon className="h-5 w-5" /> },
-    { label: 'Marks', href: '/marks', icon: <StarIcon className="h-5 w-5" /> },
-    { label: 'Profile', href: '/profile', icon: <UserIcon className="h-5 w-5" /> },
-  ],
-};
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -67,8 +35,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent" />
+          <p className="text-xs font-semibold text-slate-500 tracking-wider uppercase">Loading AcademiaPro...</p>
+        </div>
       </div>
     );
   }
@@ -80,96 +51,137 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function Layout() {
-  const { user, hasRole } = useAuth();
-  const { resolvedTheme } = useTheme();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const location = useLocation();
+function RoleRoute({
+  allowedRoles,
+  children,
+}: {
+  allowedRoles: UserRole[];
+  children: React.ReactNode;
+}) {
+  const { user } = useAuth();
 
-  const navigation = roleNavigation[user?.role as UserRole] || [];
+  if (!user || !allowedRoles.includes(user.role as UserRole)) {
+    return <AccessDeniedPage requiredRoles={allowedRoles} />;
+  }
 
-  const getBreadcrumbs = () => {
-    const path = location.pathname;
-    const segments = path.split('/').filter(Boolean);
-    
-    const routeLabels: Record<string, string> = {
-      dashboard: 'Dashboard',
-      students: 'Students',
-      faculty: 'Faculty',
-      courses: 'Courses',
-      enrollments: 'Enrollments',
-      attendance: 'Attendance',
-      assessments: 'Assessments',
-      marks: 'Marks',
-      reports: 'Reports',
-      settings: 'Settings',
-      profile: 'Profile',
-    };
-
-    const breadcrumbs: Array<{ label: string; href: string; isCurrent?: boolean }> = [{ label: 'Home', href: '/', isCurrent: false }];
-    
-    let currentPath = '';
-    segments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      const isLast = index === segments.length - 1;
-      const label = routeLabels[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      
-      breadcrumbs.push({
-        label,
-        href: isLast ? '' : currentPath,
-        isCurrent: isLast,
-      });
-    });
-
-    return breadcrumbs;
-  };
-
-  return (
-    <div className={cn('min-h-screen bg-neutral-50 dark:bg-neutral-950 transition-colors', sidebarCollapsed && 'lg:pl-16')}>
-      <Sidebar
-        items={navigation}
-        isOpen={sidebarOpen}
-        onToggle={setSidebarOpen}
-        collapsed={sidebarCollapsed}
-        onCollapseChange={setSidebarCollapsed}
-      />
-      
-      <div className={cn('lg:pl-64 transition-all duration-300', sidebarCollapsed && 'lg:pl-16')}>
-        <Header
-          title=""
-          breadcrumbs={getBreadcrumbs()}
-          onSearch={() => {}}
-        />
-        
-        <main className="p-4 lg:p-6">
-          <div className="max-w-full mx-auto">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-    </div>
-  );
+  return <>{children}</>;
 }
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/students" element={<StudentsPage />} />
-        <Route path="/students/new" element={<StudentsPage />} />
+        
+        {/* Opaque Role Workspace Routes */}
+        <Route
+          path="/app/w-adm89x"
+          element={
+            <RoleRoute allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/app/w-fac42m"
+          element={
+            <RoleRoute allowedRoles={['FACULTY']}>
+              <FacultyDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/app/w-stu17k"
+          element={
+            <RoleRoute allowedRoles={['STUDENT']}>
+              <StudentDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/app/w-dpt63h"
+          element={
+            <RoleRoute allowedRoles={['DEPARTMENT_HEAD']}>
+              <DeptHeadDashboard />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/app/w-reg55r"
+          element={
+            <RoleRoute allowedRoles={['REGISTRAR']}>
+              <RegistrarDashboard />
+            </RoleRoute>
+          }
+        />
+        
+        {/* Student Directory: Admin, Faculty, Dept Head, Registrar */}
+        <Route
+          path="/students"
+          element={
+            <RoleRoute allowedRoles={['ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR']}>
+              <StudentsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="/students/new"
+          element={
+            <RoleRoute allowedRoles={['ADMIN', 'REGISTRAR']}>
+              <StudentsPage />
+            </RoleRoute>
+          }
+        />
         <Route path="/students/:id" element={<StudentDetailPage />} />
-        <Route path="/faculty" element={<FacultyPage />} />
+
+        {/* Faculty Roster: Admin, Faculty, Dept Head, Registrar */}
+        <Route
+          path="/faculty"
+          element={
+            <RoleRoute allowedRoles={['ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR']}>
+              <FacultyPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* Courses & Curriculum: All authenticated roles */}
         <Route path="/courses" element={<CoursesPage />} />
+
+        {/* Enrollments: All authenticated roles */}
         <Route path="/enrollments" element={<EnrollmentsPage />} />
+
+        {/* Attendance: All authenticated roles */}
         <Route path="/attendance" element={<AttendancePage />} />
+
+        {/* Assessments: All authenticated roles */}
         <Route path="/assessments" element={<AssessmentsPage />} />
+
+        {/* Marks: All authenticated roles */}
         <Route path="/marks" element={<MarksPage />} />
+
+        {/* Reports: All authenticated roles */}
         <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/settings" element={<OtherPages />} />
-        <Route path="/profile" element={<OtherPages />} />
+
+        {/* System Settings: Restricted to Admin, Dept Head, Registrar */}
+        <Route
+          path="/settings"
+          element={
+            <RoleRoute allowedRoles={['ADMIN', 'DEPARTMENT_HEAD', 'REGISTRAR']}>
+              <SettingsPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* User Profile: All roles */}
+        <Route path="/profile" element={<ProfilePage />} />
+
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
