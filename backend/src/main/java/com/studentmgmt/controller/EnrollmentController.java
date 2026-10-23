@@ -25,7 +25,7 @@ public class EnrollmentController {
     private final EnrollmentService enrollmentService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and #studentId != null and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<Page<EnrollmentDTO>> getAllEnrollments(
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Long courseId,
@@ -37,7 +37,7 @@ public class EnrollmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isEnrolledStudent(#id, authentication))")
     public ResponseEntity<EnrollmentDTO> getEnrollmentById(@PathVariable Long id) {
         return enrollmentService.findById(id)
                 .map(ResponseEntity::ok)
@@ -45,7 +45,7 @@ public class EnrollmentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#createDTO.studentId, authentication))")
     public ResponseEntity<EnrollmentDTO> createEnrollment(@Valid @RequestBody com.studentmgmt.dto.EnrollmentCreateDTO createDTO) {
         EnrollmentDTO enrollment = enrollmentService.create(createDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(enrollment);

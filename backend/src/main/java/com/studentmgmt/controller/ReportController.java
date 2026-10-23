@@ -24,7 +24,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/student-academic-profile/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<StudentAcademicProfileDTO> getStudentAcademicProfile(@PathVariable Long studentId) {
         return ResponseEntity.ok(reportService.getStudentAcademicProfile(studentId));
     }
@@ -48,7 +48,7 @@ public class ReportController {
     }
 
     @GetMapping("/attendance/student/{studentId}/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<AttendanceReportDTO> getStudentAttendanceReport(@PathVariable Long studentId, @PathVariable Long courseId) {
         return ResponseEntity.ok(reportService.getStudentAttendanceReport(studentId, courseId));
     }
@@ -60,7 +60,7 @@ public class ReportController {
     }
 
     @GetMapping("/student-performance/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<StudentPerformanceSummaryDTO> getStudentPerformanceSummary(@PathVariable Long studentId) {
         return ResponseEntity.ok(reportService.getStudentPerformanceSummary(studentId));
     }

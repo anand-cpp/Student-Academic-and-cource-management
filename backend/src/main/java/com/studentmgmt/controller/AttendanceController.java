@@ -70,7 +70,7 @@ public class AttendanceController {
 
     // Attendance record endpoints
     @GetMapping("/records")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR')")
     public ResponseEntity<Page<AttendanceRecordDTO>> getAllRecords(
             @RequestParam(required = false) Long sessionId,
             @RequestParam(required = false) Long enrollmentId,
@@ -103,7 +103,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/student/{studentId}/course/{courseId}/summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<com.studentmgmt.dto.AttendanceSummaryDTO> getStudentAttendanceSummary(
             @PathVariable Long studentId,
             @PathVariable Long courseId) {

@@ -24,7 +24,7 @@ public class MarksController {
     private final MarksService marksService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR')")
     public ResponseEntity<Page<MarksDTO>> getAllMarks(
             @RequestParam(required = false) Long assessmentId,
             @RequestParam(required = false) Long enrollmentId,
@@ -36,7 +36,7 @@ public class MarksController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR')")
     public ResponseEntity<MarksDTO> getMarksById(@PathVariable Long id) {
         return marksService.findById(id)
                 .map(ResponseEntity::ok)
@@ -50,13 +50,13 @@ public class MarksController {
     }
 
     @GetMapping("/enrollment/{enrollmentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isEnrolledStudent(#enrollmentId, authentication))")
     public ResponseEntity<List<MarksDTO>> getByEnrollment(@PathVariable Long enrollmentId) {
         return ResponseEntity.ok(marksService.findByEnrollmentId(enrollmentId));
     }
 
     @GetMapping("/student/{studentId}/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#studentId, authentication))")
     public ResponseEntity<List<MarksDTO>> getByStudentAndCourse(@PathVariable Long studentId, @PathVariable Long courseId) {
         return ResponseEntity.ok(marksService.findByStudentAndCourse(studentId, courseId));
     }

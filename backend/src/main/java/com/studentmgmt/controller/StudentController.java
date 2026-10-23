@@ -38,7 +38,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#id, authentication))")
     public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
         return studentService.findById(id)
                 .map(ResponseEntity::ok)
@@ -46,7 +46,7 @@ public class StudentController {
     }
 
     @GetMapping("/student-id/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudentByCode(#studentId, authentication))")
     public ResponseEntity<StudentDTO> getStudentByStudentId(@PathVariable String studentId) {
         return studentService.findByStudentId(studentId)
                 .map(ResponseEntity::ok)
@@ -54,7 +54,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}/detail")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'DEPARTMENT_HEAD', 'REGISTRAR') or (hasRole('STUDENT') and @securityService.isCurrentStudent(#id, authentication))")
     public ResponseEntity<StudentDetailDTO> getStudentDetail(@PathVariable Long id) {
         // This would need a separate service method to fetch detail with enrollments, attendance, academic summary
         return ResponseEntity.ok().build(); // Placeholder
