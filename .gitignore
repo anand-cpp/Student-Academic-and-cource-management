@@ -1,7 +1,10 @@
 # Build outputs
 target/
+**/target/
 build/
 dist/
+**/dist/
+*.tsbuildinfo
 
 # IDE
 .idea/
@@ -28,6 +31,7 @@ logs/
 
 # Node
 node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -41,3 +45,7 @@ coverage/
 *.jar
 *.war
 *.ear
+
+# Scratch files
+TestBCrypt.java
+backend/TestBCrypt.java
