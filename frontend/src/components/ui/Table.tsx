@@ -360,7 +360,7 @@ function TableLoading({
   );
 }
 
-export function Table<T = unknown>({
+function Table<T = unknown>({
   columns,
   data,
   keyAccessor,
