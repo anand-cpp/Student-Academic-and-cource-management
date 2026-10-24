@@ -1,0 +1,7 @@
+# Database connection configuration for Student Academic & Course Management System
+# Copy this file to config/db.properties and edit the values for your environment.
+# Never commit config/db.properties with real passwords to source control.
+
+db.url=jdbc:mysql://localhost:3306/student_academic_management?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+db.user=root
+db.password=
