@@ -1,7 +1,9 @@
 package ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -10,10 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.BorderFactory;
-import javax.swing.DefaultCellEditor;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -21,15 +19,18 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
+import javax.swing.BorderFactory;
 import javax.swing.table.DefaultTableModel;
 import dao.AttendanceDAO;
 import dao.CourseDAO;
-import dao.EnrollmentDAO;
 import model.Attendance;
 import service.AttendanceService;
 import util.AppException;
 import util.DateUtils;
+import ui.components.FormField;
+import ui.components.RoundedButton;
+import ui.components.RoundedPanel;
+import ui.components.SectionHeader;
 import util.UIStyles;
 
 /**
@@ -48,7 +49,7 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
 
     private final AttendanceService service = new AttendanceService();
 
-    private JComboBox<EnrollmentPanel.ComboItem> cboCourses;
+    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboCourses;
     private JTextField fClassDate;
     private JTable table;
     private DefaultTableModel model;
@@ -63,42 +64,50 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
     }
 
     private void buildUI() {
-        // ---- Controls (top) ----
-        JPanel controls = new JPanel(new GridBagLayout());
-        controls.setBackground(UIStyles.CARD);
-        controls.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(UIStyles.LINE, 1), "Mark Attendance",
-                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14), UIStyles.PRIMARY));
+        JPanel header = sectionHeader("Attendance",
+                "Mark and track attendance per course and date.");
+
+        RoundedPanel controls = new RoundedPanel();
+        controls.setRadius(12);
+        controls.setShadow(false);
+        controls.setFill(UIStyles.CARD);
+        controls.setLayout(new GridBagLayout());
+        controls.setBorder(new EmptyBorder(16, 16, 16, 16));
+
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(7, 7, 7, 7);
+        g.insets = new Insets(8, 8, 8, 8);
         g.anchor = GridBagConstraints.WEST;
         g.gridx = 0;
         g.gridy = 0;
 
-        cboCourses = new JComboBox<>();
+        cboCourses = new javax.swing.JComboBox<>();
         fClassDate = new JTextField();
-        fClassDate.setFont(UIStyles.BODY_FONT);
-        fClassDate.setBorder(UIStyles.line());
+        fClassDate.setFont(UIStyles.BODY);
+        fClassDate.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
         fClassDate.setToolTipText("Class date yyyy-MM-dd");
-        fClassDate.setPreferredSize(new Dimension(150, 30));
+        fClassDate.setPreferredSize(new Dimension(150, 34));
 
-        JLabel lblCrs = new JLabel("Course *");
-        lblCrs.setFont(UIStyles.BODY_FONT);
-        JLabel lblDate = new JLabel("Class Date *");
-        lblDate.setFont(UIStyles.BODY_FONT);
+        JLabel lblCrs = UIStyles.fieldLabel("Course *");
+        JLabel lblDate = UIStyles.fieldLabel("Class Date *");
 
-        g.gridwidth = 2;
-        addField(controls, g, lblCrs, cboCourses);
-        addField(controls, g, lblDate, fClassDate);
+        addGrid(controls, g, lblCrs, cboCourses);
+        addGrid(controls, g, lblDate, fClassDate);
         g.gridwidth = 1;
 
-        JButton btnLoad = button("Load Students", UIStyles.PRIMARY, e -> doLoad());
-        JButton btnSave = button("Save Attendance", UIStyles.SUCCESS, e -> doSave());
-        JButton btnRefresh = button("Refresh", UIStyles.PRIMARY_DARK, e -> refreshData());
+        RoundedButton btnLoad = new RoundedButton("Load Students");
+        btnLoad.applyPrimary();
+        btnLoad.addActionListener(e -> doLoad());
+
+        RoundedButton btnSave = new RoundedButton("Save Attendance");
+        btnSave.applySuccess();
+        btnSave.addActionListener(e -> doSave());
+
+        RoundedButton btnRefresh = new RoundedButton("Refresh");
+        btnRefresh.applyGhost();
+        btnRefresh.addActionListener(e -> refreshData());
 
         JPanel btns = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        btns.setBackground(UIStyles.CARD);
+        btns.setOpaque(false);
         btns.add(btnLoad);
         btns.add(btnSave);
         btns.add(btnRefresh);
@@ -108,41 +117,47 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
         g.gridwidth = 4;
         controls.add(btns, g);
 
-        add(controls, BorderLayout.NORTH);
+        JPanel controlsWrap = new JPanel(new BorderLayout());
+        controlsWrap.setOpaque(false);
+        controlsWrap.add(controls, BorderLayout.NORTH);
 
-        // ---- Table (center) ----
         model = new DefaultTableModel(
                 new Object[][] {},
                 new String[] { "Enrollment ID", "Student ID", "Name", "Status" }) {
+            private static final long serialVersionUID = 1L;
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 3;
             }
         };
         table = new JTable(model);
-        table.getColumnModel().getColumn(3).setCellEditor(
-                new DefaultCellEditor(new JComboBox<>(new String[] { "PRESENT", "ABSENT", "LATE" })));
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
-        UIStyles.styleTable(table);
+        styleTable(table);
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(UIStyles.line());
-        add(scroll, BorderLayout.CENTER);
+        scroll.getViewport().setBackground(UIStyles.CARD);
 
-        // ---- Summary (bottom) ----
         JPanel summary = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        summary.setBackground(UIStyles.CARD);
+        summary.setOpaque(false);
         summary.setBorder(new EmptyBorder(6, 0, 0, 0));
         JLabel lblSummary = new JLabel("Select a course and date, then load students to see attendance.");
-        lblSummary.setFont(UIStyles.SMALL_FONT);
+        lblSummary.setFont(UIStyles.CAPTION);
         lblSummary.setForeground(UIStyles.MUTED);
         summary.add(lblSummary);
+
+        setLayout(new BorderLayout(0, 0));
+        add(header, BorderLayout.NORTH);
+        JPanel topWrap = new JPanel(new BorderLayout());
+        topWrap.setOpaque(false);
+        topWrap.add(controlsWrap, BorderLayout.NORTH);
+        add(topWrap, BorderLayout.NORTH);
+        add(scroll, BorderLayout.CENTER);
         add(summary, BorderLayout.SOUTH);
 
         loadCourses();
     }
 
-    private void addField(JPanel panel, GridBagConstraints g, JLabel label, java.awt.Component field) {
+    private void addGrid(JPanel panel, GridBagConstraints g, JLabel label, java.awt.Component field) {
         g.gridx = 0;
         panel.add(label, g);
         g.gridx = 1;
@@ -161,7 +176,7 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
             @Override
             protected List<EnrollmentPanel.ComboItem> doInBackground() throws Exception {
                 List<EnrollmentPanel.ComboItem> list = new ArrayList<>();
-                dao.CourseDAO dao = new dao.CourseDAO();
+                CourseDAO dao = new CourseDAO();
                 for (model.Course c : dao.findAll()) {
                     list.add(new EnrollmentPanel.ComboItem(c.getId(),
                             c.getCourseCode() + " - " + c.getCourseName()));
@@ -220,10 +235,9 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
                 try {
                     List<Map<String, Object>> enrollments = get();
                     model.setRowCount(0);
-                    dao.AttendanceDAO adao = new dao.AttendanceDAO();
+                    AttendanceDAO adao = new AttendanceDAO();
                     for (Map<String, Object> e : enrollments) {
                         int enrollmentId = (Integer) e.get("enrollmentId");
-                        // Pre-fill existing attendance for this date
                         String status = "PRESENT";
                         List<Attendance> existing = adao.findByEnrollmentAndDate(enrollmentId, date);
                         if (!existing.isEmpty()) {
@@ -291,6 +305,24 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
         model.setRowCount(0);
         currentCourseId = -1;
         currentDate = null;
+    }
+
+    protected void styleTable(JTable table) {
+        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
+        table.setShowHorizontalLines(false);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(UIStyles.SELECTION);
+        table.setSelectionForeground(UIStyles.INK);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
+        table.getTableHeader().setBackground(UIStyles.PRIMARY);
+        table.getTableHeader().setForeground(UIStyles.INVERSE);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setBorder(
+                BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
+        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
     }
 }
 

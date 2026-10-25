@@ -1,23 +1,20 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
-import java.util.concurrent.ExecutionException;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
+import ui.components.RoundedButton;
+import ui.components.RoundedPanel;
+import ui.components.SidebarItem;
 import util.UIStyles;
 import db.DatabaseConnection;
 import util.AppException;
@@ -25,22 +22,21 @@ import util.AppException;
 /**
  * Main application window.
  *
- * <p>Layout (all standard Swing layout managers, no absolute positioning):<br>
- *   NORTH  - header (page title, subtitle, DB status, refresh)<br>
- *   WEST   - sidebar navigation<br>
+ * <p>Layout:<br>
+ *   WEST   - Sidebar navigation (250px, navy background, active states)<br>
+ *   NORTH  - Header (page title, subtitle, DB status, refresh)<br>
  *   CENTER - CardLayout holding every module panel<br>
  *
- * <p>Database operations that could block run in a {@link SwingWorker} so the
- * Event Dispatch Thread stays responsive.
+ * <p>Database operations run off the EDT so the UI stays responsive.
  */
 public class MainFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
 
-    private final JPanel center = new JPanel(new CardLayout());
-    private final CardLayout cardLayout = (CardLayout) center.getLayout();
+    private final JPanel center = new JPanel(new java.awt.CardLayout());
+    private final java.awt.CardLayout cardLayout = (java.awt.CardLayout) center.getLayout();
 
-    private final JLabel dbStatusDot = new JLabel("●");
+    private final JLabel dbStatusDot = new JLabel("\u25CF");
     private final JLabel dbStatusText = new JLabel("Checking database...");
     private final JLabel pageTitle = new JLabel("Dashboard");
     private final JLabel pageSubtitle = new JLabel("Academic administration overview");
@@ -58,17 +54,25 @@ public class MainFrame extends JFrame {
     public MainFrame() {
         super("Student Academic & Course Management System");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1280, 800);
-        setMinimumSize(new Dimension(1024, 700));
+        setSize(1366, 768);
+        setMinimumSize(new Dimension(1100, 700));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(0, 0));
 
-        add(buildSidebar(), BorderLayout.WEST);
-        add(buildHeader(), BorderLayout.NORTH);
-        add(center, BorderLayout.CENTER);
+        // Root panel with card background
+        JPanel root = new JPanel(new BorderLayout(0, 0));
+        root.setBackground(UIStyles.CARD);
+
+        root.add(buildSidebar(), BorderLayout.WEST);
+        root.add(buildHeader(), BorderLayout.NORTH);
+        root.add(center, BorderLayout.CENTER);
+
+        add(root, BorderLayout.CENTER);
 
         initializePanels();
         registerNavigation();
+
+        setVisible(true);
 
         // Initial database status check (off the EDT)
         refreshDbStatus();
@@ -77,68 +81,65 @@ public class MainFrame extends JFrame {
     /* ---------- Sidebar ---------- */
 
     private JPanel buildSidebar() {
-        JPanel sidebar = new JPanel();
-        sidebar.setBackground(UIStyles.PRIMARY);
-        sidebar.setPreferredSize(new Dimension(230, 0));
-        sidebar.setLayout(new BorderLayout());
+        RoundedPanel sidebar = new RoundedPanel();
+        sidebar.setRadius(0);
+        sidebar.setFill(UIStyles.PRIMARY);
+        sidebar.setShadow(false);
+        sidebar.setLayout(new BorderLayout(0, 0));
+        sidebar.setPreferredSize(new Dimension(UIStyles.SIDEBAR_WIDTH, 0));
 
+        // Brand section
         JPanel brand = new JPanel();
         brand.setBackground(UIStyles.PRIMARY_DARK);
-        brand.setBorder(new EmptyBorder(20, 16, 24, 16));
-        brand.setLayout(new BorderLayout());
+        brand.setBorder(BorderFactory.createEmptyBorder(24, 20, 24, 20));
+        brand.setLayout(new BorderLayout(8, 4));
+
         JLabel appName = new JLabel("Student");
+        appName.setFont(UIStyles.SIDEBAR_BRAND);
+        appName.setForeground(UIStyles.INVERSE);
+
         JLabel sub = new JLabel("Academic System");
-        appName.setFont(new Font("Segoe UI", Font.BOLD, 19));
-        appName.setForeground(Color.WHITE);
-        sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        sub.setForeground(new Color(165, 175, 195));
+        sub.setFont(UIStyles.CAPTION);
+        sub.setForeground(new Color(148, 163, 184));
+
         brand.add(appName, BorderLayout.NORTH);
         brand.add(sub, BorderLayout.SOUTH);
 
+        // Navigation items
         JPanel nav = new JPanel();
         nav.setBackground(UIStyles.PRIMARY);
         nav.setLayout(new java.awt.GridLayout(0, 1, 0, 4));
-        nav.setBorder(new EmptyBorder(8, 10, 8, 10));
+        nav.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
 
-        String[] items = {
-            "Dashboard", "Students", "Faculty", "Courses",
-            "Enrollments", "Attendance", "Results", "Reports", "Exit"
+        String[][] items = {
+            {"Dashboard", "\u2630", "Dashboard"},
+            {"Students", "\u2709", "Students"},
+            {"Faculty", "\u270A", "Faculty"},
+            {"Courses", "\u2728", "Courses"},
+            {"Enrollments", "\u270D", "Enrollments"},
+            {"Attendance", "\u2705", "Attendance"},
+            {"Results", "\u2714", "Results"},
+            {"Reports", "\u2713", "Reports"},
+            {"Exit", "\u274C", "Exit"}
         };
-        for (String item : items) {
-            JButton b = new JButton(item);
-            b.setBackground(UIStyles.PRIMARY);
-            b.setForeground(new Color(203, 213, 225));
-            b.setFont(UIStyles.BUTTON_FONT);
-            b.setFocusPainted(false);
-            b.setBorderPainted(false);
-            b.setContentAreaFilled(false);
-            b.setOpaque(true);
-            b.setBorder(new EmptyBorder(12, 16, 12, 16));
-            b.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-            b.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-            b.addMouseListener(new java.awt.event.MouseAdapter() {
-                @Override public void mouseEntered(java.awt.event.MouseEvent e) {
-                    b.setBackground(new Color(55, 65, 81));
-                }
-                @Override public void mouseExited(java.awt.event.MouseEvent e) {
-                    b.setBackground(UIStyles.PRIMARY);
-                }
-            });
+
+        for (String[] item : items) {
+            SidebarItem b = new SidebarItem(item[0], item[1]);
+            b.addActionListener((ActionEvent e) -> navigateTo(item[2]));
             nav.add(b);
-            String page = item;
-            b.addActionListener((ActionEvent e) -> navigateTo(page));
         }
+
+        // Version footer
+        JPanel version = new JPanel();
+        version.setBackground(UIStyles.PRIMARY_DARK);
+        version.setBorder(BorderFactory.createEmptyBorder(16, 20, 20, 20));
+        JLabel ver = new JLabel("v1.0.0  \u00B7  JDK 21 + JDBC");
+        ver.setFont(UIStyles.CAPTION);
+        ver.setForeground(new Color(120, 130, 145));
+        version.add(ver);
 
         sidebar.add(brand, BorderLayout.NORTH);
         sidebar.add(nav, BorderLayout.CENTER);
-
-        JPanel version = new JPanel();
-        version.setBackground(UIStyles.PRIMARY_DARK);
-        version.setBorder(new EmptyBorder(12, 16, 16, 16));
-        JLabel ver = new JLabel("v1.0.0  ·  JDK 21 + JDBC");
-        ver.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        ver.setForeground(new Color(120, 130, 145));
-        version.add(ver);
         sidebar.add(version, BorderLayout.SOUTH);
 
         return sidebar;
@@ -147,37 +148,44 @@ public class MainFrame extends JFrame {
     /* ---------- Header ---------- */
 
     private JPanel buildHeader() {
-        JPanel header = new JPanel();
-        header.setBackground(UIStyles.ACCENT);
-        header.setBorder(new EmptyBorder(10, 20, 10, 20));
-        header.setLayout(new BorderLayout(12, 0));
+        RoundedPanel header = new RoundedPanel();
+        header.setRadius(0);
+        header.setFill(UIStyles.ACCENT);
+        header.setShadow(false);
+        header.setLayout(new BorderLayout(16, 0));
+        header.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+        header.setPreferredSize(new Dimension(0, UIStyles.HEADER_HEIGHT));
 
+        // Left: title + subtitle
         JPanel left = new JPanel();
         left.setBackground(UIStyles.ACCENT);
-        left.setLayout(new BorderLayout(6, 4));
-        pageTitle.setFont(new Font("Segoe UI", Font.BOLD, 17));
-        pageTitle.setForeground(Color.WHITE);
-        pageSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        left.setLayout(new BorderLayout(4, 4));
+        pageTitle.setFont(UIStyles.H2);
+        pageTitle.setForeground(UIStyles.INVERSE);
+        pageSubtitle.setFont(UIStyles.BODY_SM);
         pageSubtitle.setForeground(new Color(209, 213, 221));
         left.add(pageTitle, BorderLayout.NORTH);
         left.add(pageSubtitle, BorderLayout.SOUTH);
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        // Right: DB status + refresh
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 0));
         right.setBackground(UIStyles.ACCENT);
-        dbStatusDot.setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        dbStatusDot.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 12));
         dbStatusDot.setForeground(UIStyles.WARNING);
-        dbStatusText.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dbStatusText.setForeground(Color.WHITE);
-        JButton refresh = new JButton("Refresh");
-        UIStyles.applyOutlineButton(refresh);
-        refresh.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        dbStatusText.setFont(UIStyles.BODY_SM);
+        dbStatusText.setForeground(UIStyles.INVERSE);
+
+        RoundedButton refresh = new RoundedButton("Refresh");
+        refresh.applyOutline();
+        refresh.setFont(UIStyles.BUTTON_SM);
         refresh.addActionListener(e -> {
             refreshDbStatus();
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                java.awt.Component c = center.getComponent(center.getComponentCount() - 1);
-                // refresh the visible panel if it exposes refreshData()
-                if (c instanceof Refreshable) {
-                    ((Refreshable) c).refreshData();
+            java.awt.EventQueue.invokeLater(() -> {
+                for (java.awt.Component c : center.getComponents()) {
+                    if (c.isVisible() && c instanceof Refreshable) {
+                        ((Refreshable) c).refreshData();
+                    }
                 }
             });
         });
@@ -188,6 +196,7 @@ public class MainFrame extends JFrame {
 
         header.add(left, BorderLayout.WEST);
         header.add(right, BorderLayout.EAST);
+
         return header;
     }
 
@@ -213,7 +222,7 @@ public class MainFrame extends JFrame {
         center.add(reports, "Reports");
 
         cardLayout.show(center, "Dashboard");
-        setPageTitle("Dashboard", "Academic administration overview — live statistics from MySQL.");
+        setPageTitle("Dashboard", "Academic administration overview \u2014 live statistics from MySQL.");
     }
 
     private void registerNavigation() {
@@ -227,12 +236,11 @@ public class MainFrame extends JFrame {
         }
         cardLayout.show(center, page);
         setPageTitle(page, defaultSubtitle(page));
-        if (center.getComponent(0) instanceof Refreshable) {
-            // find the shown panel
-            for (java.awt.Component c : center.getComponents()) {
-                if (c.isVisible() && c instanceof Refreshable) {
-                    ((Refreshable) c).refreshData();
-                }
+
+        // Refresh the shown panel
+        for (java.awt.Component c : center.getComponents()) {
+            if (c.isVisible() && c instanceof Refreshable) {
+                ((Refreshable) c).refreshData();
             }
         }
         refreshDbStatus();
@@ -245,21 +253,21 @@ public class MainFrame extends JFrame {
 
     private String defaultSubtitle(String page) {
         switch (page) {
-            case "Students": return "Manage student records — add, search, edit, delete.";
-            case "Faculty": return "Manage faculty members and their course assignments.";
+            case "Students": return "Manage student records \u2014 add, search, edit, delete.";
+            case "Faculty": return "Manage faculty members and course assignments.";
             case "Courses": return "Manage courses, credits, marks, and faculty assignment.";
             case "Enrollments": return "Enroll students in courses and manage enrollment status.";
             case "Attendance": return "Mark and track attendance per course and date.";
             case "Results": return "Enter marks, calculate percentages and grades.";
             case "Reports": return "Academic reports and performance summaries.";
-            default: return "Academic administration overview — live statistics from MySQL.";
+            default: return "Academic administration overview \u2014 live statistics from MySQL.";
         }
     }
 
     /* ---------- Database status ---------- */
 
     void refreshDbStatus() {
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+        new javax.swing.SwingWorker<Boolean, Void>() {
             @Override
             protected Boolean doInBackground() throws Exception {
                 try {
@@ -272,10 +280,10 @@ public class MainFrame extends JFrame {
 
             @Override
             protected void done() {
-                boolean connected;
+                boolean connected = false;
                 try {
                     connected = get();
-                } catch (InterruptedException | ExecutionException ex) {
+                } catch (Exception ex) {
                     connected = false;
                 }
                 if (connected) {
@@ -286,17 +294,16 @@ public class MainFrame extends JFrame {
                     dbStatusText.setText("Database disconnected");
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(MainFrame::new);
     }
 
-    /** Panels implement this so navigation can refresh their data. */
     public interface Refreshable {
         void refreshData();
     }
 }
+
 

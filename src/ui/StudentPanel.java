@@ -1,35 +1,35 @@
 package ui;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import dao.StudentDAO;
 import model.Student;
 import service.StudentService;
 import util.AppException;
 import util.DateUtils;
+import util.InputValidator;
+import ui.components.EmptyState;
+import ui.components.FormField;
+import ui.components.RoundedButton;
+import ui.components.RoundedPanel;
+import ui.components.SectionHeader;
 import util.UIStyles;
 
 /**
  * Student management panel: add, view, search, update, delete students.
- *
- * <p>Consistent CRUD layout: toolbar (search + actions) at top, input form on
- * the left, data table in the center. All database work runs in a
- * SwingWorker so the UI stays responsive.
  */
 public class StudentPanel extends BasePanel {
 
@@ -37,7 +37,7 @@ public class StudentPanel extends BasePanel {
 
     private final StudentService service = new StudentService();
 
-    private JTextField fStudentId, fRollNumber, fFullName, fEmail, fPhone,
+    private FormField fStudentId, fRollNumber, fFullName, fEmail, fPhone,
             fAddress, fDob, fDepartment, fSemester, fAdmissionDate;
 
     private JTable table;
@@ -50,53 +50,60 @@ public class StudentPanel extends BasePanel {
     }
 
     private void buildUI() {
-        // ---- Toolbar ----
-        JPanel toolbar = new JPanel(new BorderLayout(8, 8));
-        toolbar.setBackground(UIStyles.CARD);
-        toolbar.setBorder(new EmptyBorder(0, 0, 8, 0));
+        // Header section
+        JPanel header = sectionHeader("Students",
+                "Manage student records \u2014 add, search, edit, delete.");
+
+        // Toolbar
+        JPanel toolbar = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 12, 0));
+        toolbar.setOpaque(false);
+        toolbar.setBorder(new EmptyBorder(0, 0, 12, 0));
 
         JTextField search = new JTextField();
+        search.setFont(UIStyles.BODY);
+        search.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
+        search.setPreferredSize(new Dimension(340, 40));
         search.setToolTipText("Search by student ID, roll no., name, email or department");
-        search.setPreferredSize(new Dimension(360, 34));
-        JButton btnSearch = button("Search", UIStyles.ACCENT, e -> doSearch(search.getText()));
-        JButton btnRefresh = button("Refresh", UIStyles.PRIMARY, e -> refreshData());
-        JButton btnAddNew = button("Add New", UIStyles.PRIMARY_DARK, e -> clearForm());
 
-        JPanel searchWrap = new JPanel(new BorderLayout(8, 0));
-        searchWrap.setBackground(UIStyles.CARD);
-        searchWrap.add(new JLabel("  Search:"), BorderLayout.WEST);
-        searchWrap.add(search, BorderLayout.CENTER);
+        RoundedButton btnSearch = new RoundedButton("Search");
+        btnSearch.applyAccent();
+        btnSearch.addActionListener(e -> doSearch(search.getText()));
 
-        JPanel actions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 0));
-        actions.setBackground(UIStyles.CARD);
-        actions.add(btnSearch);
-        actions.add(btnRefresh);
-        actions.add(btnAddNew);
+        RoundedButton btnRefresh = new RoundedButton("Refresh");
+        btnRefresh.applyGhost();
+        btnRefresh.addActionListener(e -> refreshData());
 
-        toolbar.add(searchWrap, BorderLayout.WEST);
-        toolbar.add(actions, BorderLayout.EAST);
-        add(toolbar, BorderLayout.NORTH);
+        RoundedButton btnAddNew = new RoundedButton("Add New");
+        btnAddNew.applyPrimary();
+        btnAddNew.addActionListener(e -> clearForm());
 
-        // ---- Form (left) ----
-        fStudentId = newField();
-        fRollNumber = newField();
-        fFullName = newField();
-        fEmail = newField();
-        fPhone = newField();
-        fAddress = newField();
-        fDob = newField();
-        fDepartment = newField();
-        fSemester = newField();
-        fAdmissionDate = newField();
+        toolbar.add(new JLabel("  Search:"));
+        toolbar.add(search);
+        toolbar.add(btnSearch);
+        toolbar.add(btnRefresh);
+        toolbar.add(btnAddNew);
 
-        JPanel form = new JPanel(new GridBagLayout());
-        form.setBackground(UIStyles.CARD);
-        form.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(UIStyles.LINE, 1), "Student Details",
-                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14), UIStyles.PRIMARY));
+        // Form (left card)
+        fStudentId = new FormField("STU0001");
+        fRollNumber = new FormField("ROLL0001");
+        fFullName = new FormField("Aarav Singh");
+        fEmail = new FormField("aarav@college.edu");
+        fPhone = new FormField("+91 98765 43210");
+        fAddress = new FormField("12, College Road, Delhi");
+        fDob = new FormField("2002-03-15");
+        fDepartment = new FormField("Computer Science");
+        fSemester = new FormField("3");
+        fAdmissionDate = new FormField("2021-08-01");
+
+        RoundedPanel formCard = new RoundedPanel();
+        formCard.setRadius(12);
+        formCard.setShadow(false);
+        formCard.setFill(UIStyles.CARD);
+        formCard.setLayout(new GridBagLayout());
+        formCard.setBorder(new EmptyBorder(20, 20, 20, 20));
+
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(7, 7, 7, 7);
+        g.insets = new Insets(8, 8, 8, 8);
         g.anchor = GridBagConstraints.WEST;
         g.fill = GridBagConstraints.HORIZONTAL;
         g.weightx = 1.0;
@@ -104,24 +111,32 @@ public class StudentPanel extends BasePanel {
         g.gridy = 0;
 
         g.gridwidth = 2;
-        addFieldRow(form, g, "Student ID *", fStudentId);
-        addFieldRow(form, g, "Roll Number *", fRollNumber);
-        addFieldRow(form, g, "Full Name *", fFullName);
-        addFieldRow(form, g, "Email *", fEmail);
-        addFieldRow(form, g, "Phone", fPhone);
-        addFieldRow(form, g, "Address", fAddress);
-        addFieldRow(form, g, "Date of Birth (yyyy-MM-dd)", fDob);
-        addFieldRow(form, g, "Department *", fDepartment);
-        addFieldRow(form, g, "Semester *", fSemester);
-        addFieldRow(form, g, "Admission Date (yyyy-MM-dd)", fAdmissionDate);
+        addFormRow(formCard, g, "Student ID *", fStudentId);
+        addFormRow(formCard, g, "Roll Number *", fRollNumber);
+        addFormRow(formCard, g, "Full Name *", fFullName);
+        addFormRow(formCard, g, "Email *", fEmail);
+        addFormRow(formCard, g, "Phone", fPhone);
+        addFormRow(formCard, g, "Address", fAddress);
+        addFormRow(formCard, g, "Date of Birth (yyyy-MM-dd)", fDob);
+        addFormRow(formCard, g, "Department *", fDepartment);
+        addFormRow(formCard, g, "Semester *", fSemester);
+        addFormRow(formCard, g, "Admission Date (yyyy-MM-dd)", fAdmissionDate);
         g.gridwidth = 1;
 
         JPanel formActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        formActions.setBackground(UIStyles.CARD);
-        JButton btnSave = button("Save", UIStyles.SUCCESS, e -> doSave());
-        JButton btnUpdate = button("Update", UIStyles.ACCENT, e -> doUpdate());
-        JButton btnDelete = button("Delete", UIStyles.DANGER, e -> doDelete());
-        JButton btnClear = button("Reset", UIStyles.MUTED, e -> clearForm());
+        formActions.setOpaque(false);
+        RoundedButton btnSave = new RoundedButton("Save");
+        btnSave.applySuccess();
+        btnSave.addActionListener(e -> doSave());
+        RoundedButton btnUpdate = new RoundedButton("Update");
+        btnUpdate.applyAccent();
+        btnUpdate.addActionListener(e -> doUpdate());
+        RoundedButton btnDelete = new RoundedButton("Delete");
+        btnDelete.applyDanger();
+        btnDelete.addActionListener(e -> doDelete());
+        RoundedButton btnClear = new RoundedButton("Reset");
+        btnClear.applyGhost();
+        btnClear.addActionListener(e -> clearForm());
         formActions.add(btnSave);
         formActions.add(btnUpdate);
         formActions.add(btnDelete);
@@ -131,39 +146,47 @@ public class StudentPanel extends BasePanel {
         g.gridy++;
         g.gridwidth = 2;
         g.anchor = GridBagConstraints.WEST;
-        form.add(formActions, g);
+        formCard.add(formActions, g);
 
+        // Form wrapper with fixed width
         JPanel formWrap = new JPanel(new BorderLayout());
-        formWrap.setBackground(UIStyles.CARD);
+        formWrap.setOpaque(false);
         formWrap.setPreferredSize(new Dimension(420, 0));
-        formWrap.add(form, BorderLayout.NORTH);
-        add(formWrap, BorderLayout.WEST);
+        formWrap.add(formCard, BorderLayout.NORTH);
 
-        // ---- Table (center) ----
+        // Table (center)
         table = new JTable();
         JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(UIStyles.line());
-        add(scroll, BorderLayout.CENTER);
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(table);
 
+        // Row selection
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting() || table.getSelectedRow() < 0) {
                 return;
             }
             loadSelectedRow();
         });
+
+        // Assemble
+        JPanel content = new JPanel(new BorderLayout(16, 16));
+        content.setOpaque(false);
+        content.setBorder(new EmptyBorder(0, 20, 20, 20));
+        content.add(formWrap, BorderLayout.WEST);
+        content.add(scroll, BorderLayout.CENTER);
+
+        setLayout(new BorderLayout(0, 0));
+        add(header, BorderLayout.NORTH);
+        add(toolbar, BorderLayout.SOUTH); // toolbar at top under header
+        add(content, BorderLayout.CENTER);
+
+        // Reorder: toolbar should be under header
+        getComponent(1); // toolbar already added
     }
 
-    private JTextField newField() {
-        JTextField f = new JTextField();
-        f.setFont(UIStyles.BODY_FONT);
-        f.setBorder(UIStyles.line());
-        return f;
-    }
-
-    private void addFieldRow(JPanel form, GridBagConstraints g, String label, JTextField field) {
-        JLabel l = new JLabel(label);
-        l.setFont(UIStyles.BODY_FONT);
-        l.setForeground(UIStyles.INK);
+    private void addFormRow(JPanel form, GridBagConstraints g, String label, FormField field) {
+        JLabel l = UIStyles.fieldLabel(label);
+        l.setBorder(new EmptyBorder(0, 0, 4, 0));
         g.gridx = 0;
         form.add(l, g);
         g.gridy++;
@@ -304,7 +327,7 @@ public class StudentPanel extends BasePanel {
                 s.getSemester(), DateUtils.display(s.getAdmissionDate())
             };
         }
-        replaceTableModel(table, data,
+        replaceTableData(table, data,
             new String[] { "ID", "Student ID", "Roll No.", "Full Name", "Email", "Phone",
                 "Address", "DOB", "Department", "Semester", "Admission" });
         if (students.isEmpty()) {
@@ -321,45 +344,36 @@ public class StudentPanel extends BasePanel {
         table.clearSelection();
     }
 
-    private String readStudentId() {
-        return fStudentId.getText();
-    }
+    private String readStudentId() { return fStudentId.getText(); }
+    private String readRollNumber() { return fRollNumber.getText(); }
+    private String readFullName() { return fFullName.getText(); }
+    private String readEmail() { return fEmail.getText(); }
+    private String readPhone() { return fPhone.getText(); }
+    private String readAddress() { return fAddress.getText(); }
+    private String readDob() { return fDob.getText(); }
+    private String readDepartment() { return fDepartment.getText(); }
+    private String readSemester() { return fSemester.getText(); }
+    private String readAdmissionDate() { return fAdmissionDate.getText(); }
 
-    private String readRollNumber() {
-        return fRollNumber.getText();
-    }
-
-    private String readFullName() {
-        return fFullName.getText();
-    }
-
-    private String readEmail() {
-        return fEmail.getText();
-    }
-
-    private String readPhone() {
-        return fPhone.getText();
-    }
-
-    private String readAddress() {
-        return fAddress.getText();
-    }
-
-    private String readDob() {
-        return fDob.getText();
-    }
-
-    private String readDepartment() {
-        return fDepartment.getText();
-    }
-
-    private String readSemester() {
-        return fSemester.getText();
-    }
-
-    private String readAdmissionDate() {
-        return fAdmissionDate.getText();
-    }
+    protected void styleTable(JTable table) {
+        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
+        table.setShowHorizontalLines(false);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(UIStyles.SELECTION);
+        table.setSelectionForeground(UIStyles.INK);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
+        table.getTableHeader().setBackground(UIStyles.PRIMARY);
+        table.getTableHeader().setForeground(UIStyles.INVERSE);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setBorder(
+                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
+        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
+            }
 }
+
+
 
 

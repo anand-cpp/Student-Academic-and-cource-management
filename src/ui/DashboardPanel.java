@@ -1,22 +1,24 @@
 package ui;
 
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Color;
-import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableModel;
 import service.ReportService;
+import ui.components.EmptyState;
+import ui.components.RoundedPanel;
+import ui.components.SectionHeader;
+import ui.components.StatCard;
 import util.UIStyles;
 
 /**
@@ -32,12 +34,12 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
     private final MainFrame main;
     private final ReportService report = new ReportService();
 
-    private JLabel cardStudents;
-    private JLabel cardFaculty;
-    private JLabel cardCourses;
-    private JLabel cardEnrollments;
-    private JLabel cardAvgAttendance;
-    private JLabel cardAvgAcademic;
+    private StatCard cardStudents;
+    private StatCard cardFaculty;
+    private StatCard cardCourses;
+    private StatCard cardEnrollments;
+    private StatCard cardAvgAttendance;
+    private StatCard cardAvgAcademic;
 
     private JTable recentStudentsTable;
     private JTable recentEnrollmentsTable;
@@ -45,62 +47,72 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
     public DashboardPanel(MainFrame main) {
         this.main = main;
         setBackground(UIStyles.CARD);
-        setLayout(new java.awt.BorderLayout(10, 10));
+        setLayout(new BorderLayout(0, 0));
         buildUI();
         refreshData();
     }
 
     private void buildUI() {
-        JPanel header = new JPanel(new java.awt.BorderLayout());
-        header.setBackground(UIStyles.CARD);
-        header.setBorder(new EmptyBorder(0, 0, 12, 0));
-        JLabel title = new JLabel("Dashboard");
-        title.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 20));
-        title.setForeground(UIStyles.INK);
-        JLabel sub = new JLabel("Live academic overview — all figures computed from MySQL.");
-        sub.setFont(UIStyles.SUBTITLE_FONT);
-        sub.setForeground(UIStyles.MUTED);
-        header.add(title, java.awt.BorderLayout.NORTH);
-        header.add(sub, java.awt.BorderLayout.SOUTH);
-        add(header, java.awt.BorderLayout.NORTH);
+        // Header section
+        JPanel header = new SectionHeader("Dashboard", "Live academic overview \u2014 all figures computed from MySQL.");
+        add(header, BorderLayout.NORTH);
+
+        // Scrollable content
+        JPanel scrollContent = new JPanel(new BorderLayout(0, 0));
+        scrollContent.setOpaque(false);
+        scrollContent.setBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0));
 
         // Summary cards (2 rows x 3 columns)
         JPanel cards = new JPanel(new GridBagLayout());
-        cards.setBackground(UIStyles.CARD);
+        cards.setOpaque(false);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
+        gbc.weighty = 0.0;
 
-        cardStudents = valueLabel("0", UIStyles.PRIMARY);
-        cardFaculty = valueLabel("0", UIStyles.PRIMARY_DARK);
-        cardCourses = valueLabel("0", UIStyles.ACCENT);
-        cardEnrollments = valueLabel("0", UIStyles.SUCCESS);
-        cardAvgAttendance = valueLabel("0.00", UIStyles.INFO);
-        cardAvgAcademic = valueLabel("0.00", UIStyles.WARNING);
+        cardStudents = new StatCard("Total Students", "0", UIStyles.PRIMARY, null);
+        cardFaculty = new StatCard("Total Faculty", "0", UIStyles.PRIMARY_DARK, null);
+        cardCourses = new StatCard("Total Courses", "0", UIStyles.ACCENT, null);
+        cardEnrollments = new StatCard("Total Enrollments", "0", UIStyles.SUCCESS, null);
+        cardAvgAttendance = new StatCard("Avg Attendance", "0.00%", UIStyles.INFO, null);
+        cardAvgAcademic = new StatCard("Avg Academic", "0.00%", UIStyles.WARNING, null);
 
-        placeCard(cards, gbc, statCard(cardStudents, "Total Students", UIStyles.PRIMARY), 0, 0);
-        placeCard(cards, gbc, statCard(cardFaculty, "Total Faculty", UIStyles.PRIMARY_DARK), 0, 1);
-        placeCard(cards, gbc, statCard(cardCourses, "Total Courses", UIStyles.ACCENT), 0, 2);
-        placeCard(cards, gbc, statCard(cardEnrollments, "Total Enrollments", UIStyles.SUCCESS), 1, 0);
-        placeCard(cards, gbc, statCard(cardAvgAttendance, "Avg Attendance %", UIStyles.INFO), 1, 1);
-        placeCard(cards, gbc, statCard(cardAvgAcademic, "Avg Academic %", UIStyles.WARNING), 1, 2);
-        add(cards, java.awt.BorderLayout.CENTER);
+        placeCard(cards, gbc, cardStudents, 0, 0);
+        placeCard(cards, gbc, cardFaculty, 0, 1);
+        placeCard(cards, gbc, cardCourses, 0, 2);
+        placeCard(cards, gbc, cardEnrollments, 1, 0);
+        placeCard(cards, gbc, cardAvgAttendance, 1, 1);
+        placeCard(cards, gbc, cardAvgAcademic, 1, 2);
+
+        // Wrap cards in a bordered card panel
+        RoundedPanel cardsWrap = new RoundedPanel();
+        cardsWrap.setRadius(16);
+        cardsWrap.setShadow(true);
+        cardsWrap.setFill(UIStyles.CARD);
+        cardsWrap.setLayout(new BorderLayout());
+        cardsWrap.add(cards, BorderLayout.CENTER);
+        cardsWrap.setBorder(new javax.swing.border.EmptyBorder(20, 20, 20, 20));
+
+        scrollContent.add(cardsWrap, BorderLayout.NORTH);
 
         // Bottom: recent tables side by side
         recentStudentsTable = new JTable();
         JScrollPane studentsScroll = new JScrollPane(recentStudentsTable);
-        studentsScroll.setPreferredSize(new java.awt.Dimension(0, 220));
+        studentsScroll.setPreferredSize(new Dimension(0, 220));
+        studentsScroll.getViewport().setBackground(UIStyles.CARD);
 
         recentEnrollmentsTable = new JTable();
         JScrollPane enrollmentsScroll = new JScrollPane(recentEnrollmentsTable);
-        enrollmentsScroll.setPreferredSize(new java.awt.Dimension(0, 220));
+        enrollmentsScroll.setPreferredSize(new Dimension(0, 220));
+        enrollmentsScroll.getViewport().setBackground(UIStyles.CARD);
 
         JPanel bottom = new JPanel(new GridBagLayout());
-        bottom.setBackground(UIStyles.CARD);
+        bottom.setOpaque(false);
+        bottom.setBorder(new javax.swing.border.EmptyBorder(20, 0, 0, 0));
+
         GridBagConstraints bg = new GridBagConstraints();
-        bg.insets = new Insets(10, 0, 0, 0);
+        bg.insets = new Insets(0, 0, 0, 0);
         bg.fill = GridBagConstraints.BOTH;
         bg.weightx = 1.0;
         bg.weighty = 1.0;
@@ -110,55 +122,35 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
         bg.gridx = 1;
         bottom.add(section("Recent Enrollments", enrollmentsScroll), bg);
 
-        JPanel bottomWrap = new JPanel(new java.awt.BorderLayout());
-        bottomWrap.setBackground(UIStyles.CARD);
-        bottomWrap.add(bottom, java.awt.BorderLayout.NORTH);
-        add(bottomWrap, java.awt.BorderLayout.SOUTH);
+        scrollContent.add(bottom, BorderLayout.SOUTH);
+
+        JScrollPane mainScroll = new JScrollPane(scrollContent);
+        mainScroll.setBorder(null);
+        mainScroll.getViewport().setBackground(UIStyles.CARD);
+        mainScroll.setOpaque(false);
+        add(mainScroll, BorderLayout.CENTER);
     }
 
-    private void placeCard(JPanel cards, GridBagConstraints gbc, Component card, int row, int col) {
+    private void placeCard(JPanel cards, GridBagConstraints gbc, JPanel card, int row, int col) {
         gbc.gridx = col;
         gbc.gridy = row;
         cards.add(card, gbc);
     }
 
-    private JLabel valueLabel(String text, Color accent) {
-        JLabel val = new JLabel(text);
-        val.setFont(UIStyles.CARD_VALUE_FONT);
-        val.setForeground(accent);
-        return val;
-    }
-
-    private JPanel statCard(JLabel value, String label, Color accent) {
-        JPanel card = new JPanel(new java.awt.BorderLayout(12, 8));
-        card.setBackground(UIStyles.CARD);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIStyles.LINE, 1),
-                new EmptyBorder(16, 16, 16, 16)));
-        JLabel lab = new JLabel(label);
-        lab.setFont(UIStyles.CARD_LABEL_FONT);
-        lab.setForeground(UIStyles.MUTED);
-        JLabel indicator = new JLabel("●");
-        indicator.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 10));
-        indicator.setForeground(accent);
-
-        card.add(indicator, java.awt.BorderLayout.WEST);
-        card.add(value, java.awt.BorderLayout.CENTER);
-        card.add(lab, java.awt.BorderLayout.SOUTH);
-        return card;
-    }
-
     private JPanel section(String title, JScrollPane scroll) {
-        JPanel panel = new JPanel(new java.awt.BorderLayout(8, 8));
-        panel.setBackground(UIStyles.CARD);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIStyles.LINE, 1),
-                new EmptyBorder(12, 12, 12, 12)));
+        RoundedPanel panel = new RoundedPanel();
+        panel.setRadius(12);
+        panel.setShadow(false);
+        panel.setFill(UIStyles.CARD);
+        panel.setLayout(new BorderLayout(8, 8));
+        panel.setBorder(new javax.swing.border.EmptyBorder(16, 16, 16, 16));
+
         JLabel t = new JLabel(title);
-        t.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
+        t.setFont(UIStyles.H3);
         t.setForeground(UIStyles.INK);
-        panel.add(t, java.awt.BorderLayout.NORTH);
-        panel.add(scroll, java.awt.BorderLayout.CENTER);
+        panel.add(t, BorderLayout.NORTH);
+
+        panel.add(scroll, BorderLayout.CENTER);
         return panel;
     }
 
@@ -181,13 +173,13 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     Stats s = get();
-                    cardStudents.setText(String.valueOf(s.totalStudents));
-                    cardFaculty.setText(String.valueOf(s.totalFaculty));
-                    cardCourses.setText(String.valueOf(s.totalCourses));
-                    cardEnrollments.setText(String.valueOf(s.totalEnrollments));
-                    cardAvgAttendance.setText("0.00");
-                    cardAvgAcademic.setText("0.00");
-                } catch (InterruptedException | ExecutionException ex) {
+                    cardStudents.setValue(String.valueOf(s.totalStudents));
+                    cardFaculty.setValue(String.valueOf(s.totalFaculty));
+                    cardCourses.setValue(String.valueOf(s.totalCourses));
+                    cardEnrollments.setValue(String.valueOf(s.totalEnrollments));
+                    cardAvgAttendance.setValue("0.00%");
+                    cardAvgAcademic.setValue("0.00%");
+                } catch (Exception ex) {
                     // keep defaults
                 }
                 loadRecentStudents();
@@ -216,9 +208,9 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
                             r.get("email"), r.get("department"), r.get("semester")
                         };
                     }
-                    recentStudentsTable.setModel(new DefaultTableModel(
+                    recentStudentsTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Student ID", "Roll No.", "Name", "Email", "Department", "Semester" }));
-                    UIStyles.styleTable(recentStudentsTable);
+                    styleTable(recentStudentsTable);
                 } catch (Exception ex) {
                     // ignore
                 }
@@ -246,9 +238,9 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
                             r.get("status"), r.get("enrollmentDate")
                         };
                     }
-                    recentEnrollmentsTable.setModel(new DefaultTableModel(
+                    recentEnrollmentsTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Student ID", "Name", "Course", "Status", "Date" }));
-                    UIStyles.styleTable(recentEnrollmentsTable);
+                    styleTable(recentEnrollmentsTable);
                 } catch (Exception ex) {
                     // ignore
                 }
@@ -257,6 +249,24 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
         worker.execute();
     }
 
+    protected void styleTable(JTable table) {
+        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
+        table.setShowHorizontalLines(false);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(UIStyles.SELECTION);
+        table.setSelectionForeground(UIStyles.INK);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
+        table.getTableHeader().setBackground(UIStyles.PRIMARY);
+        table.getTableHeader().setForeground(UIStyles.INVERSE);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setBorder(
+                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
+        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
+            }
+
     private static final class Stats {
         int totalStudents;
         int totalFaculty;
@@ -264,4 +274,7 @@ public class DashboardPanel extends JPanel implements MainFrame.Refreshable {
         int totalEnrollments;
     }
 }
+
+
+
 

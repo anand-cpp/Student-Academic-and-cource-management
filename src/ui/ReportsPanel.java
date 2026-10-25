@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -9,30 +11,21 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import javax.swing.BorderFactory;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
-import java.awt.Color;
-
-import dao.AttendanceDAO;
 import dao.CourseDAO;
-import dao.EnrollmentDAO;
 import dao.FacultyDAO;
-import dao.StudentDAO;
 import model.Course;
-import model.Enrollment;
+import model.Faculty;
 import service.ReportService;
 import util.AppException;
-import util.DateUtils;
+import ui.components.RoundedButton;
+import ui.components.RoundedPanel;
+import ui.components.SectionHeader;
 import util.UIStyles;
 
 /**
@@ -52,11 +45,12 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private final ReportService report = new ReportService();
 
-    private JComboBox<EnrollmentPanel.ComboItem> cboCourses;
-    private JComboBox<EnrollmentPanel.ComboItem> cboFaculty;
+    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboCourses;
+    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboFaculty;
     private JTable dirTable, studentsInCourseTable, coursesByFacultyTable,
             attendanceSummaryTable, courseResultsTable;
-    private JLabel perfTotal, perfPass, perfFail, perfAvg;
+    private ui.components.RoundedPanel perfTotalBox, perfPassBox, perfFailBox, perfAvgBox;
+    private javax.swing.JLabel perfTotalVal, perfPassVal, perfFailVal, perfAvgVal;
 
     public ReportsPanel(MainFrame main) {
         super(main);
@@ -65,7 +59,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
     }
 
     private void buildUI() {
-        setLayout(new BorderLayout(8, 8));
+        setLayout(new BorderLayout(0, 0));
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Student Directory", buildStudentDirectoryTab());
@@ -81,17 +75,22 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildStudentDirectoryTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        JButton refresh = button("Refresh", UIStyles.PRIMARY, e -> loadStudentDirectory());
+
+        RoundedButton refresh = new RoundedButton("Refresh");
+        refresh.applyPrimary();
+        refresh.addActionListener(e -> loadStudentDirectory());
+
         JPanel top = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        top.setBackground(UIStyles.CARD);
+        top.setOpaque(false);
         top.add(refresh);
         panel.add(top, BorderLayout.NORTH);
 
         dirTable = new JTable();
         JScrollPane scroll = new JScrollPane(dirTable);
-        scroll.setBorder(UIStyles.line());
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(dirTable);
         panel.add(scroll, BorderLayout.CENTER);
         loadStudentDirectory();
         return panel;
@@ -104,6 +103,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.studentDirectory();
             }
+
             @Override
             protected void done() {
                 try {
@@ -118,7 +118,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     }
                     dirTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Student ID", "Roll No.", "Name", "Email", "Department", "Semester" }));
-                    UIStyles.styleTable(dirTable);
+                    styleTable(dirTable);
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -131,17 +131,23 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildStudentsInCourseTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel top = new JPanel(new GridBagLayout());
-        top.setBackground(UIStyles.CARD);
+        RoundedPanel top = new RoundedPanel();
+        top.setRadius(8);
+        top.setShadow(false);
+        top.setFill(UIStyles.CARD_HOVER);
+        top.setLayout(new GridBagLayout());
+        top.setBorder(new EmptyBorder(12, 12, 12, 12));
+
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 6, 6, 6);
         g.anchor = GridBagConstraints.WEST;
-        cboCourses = new JComboBox<>();
-        JLabel lbl = new JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY_FONT);
+        cboCourses = new javax.swing.JComboBox<>();
+        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
+        lbl.setFont(UIStyles.BODY);
+        lbl.setForeground(UIStyles.INK);
         top.add(lbl, g);
         g.gridx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
@@ -150,14 +156,17 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         g.gridx = 2;
         g.fill = GridBagConstraints.NONE;
         g.weightx = 0;
-        JButton load = button("Load", UIStyles.PRIMARY, e -> loadStudentsInCourse());
+        RoundedButton load = new RoundedButton("Load");
+        load.applyPrimary();
+        load.addActionListener(e -> loadStudentsInCourse());
         top.add(load, g);
 
         panel.add(top, BorderLayout.NORTH);
 
         studentsInCourseTable = new JTable();
         JScrollPane scroll = new JScrollPane(studentsInCourseTable);
-        scroll.setBorder(UIStyles.line());
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(studentsInCourseTable);
         panel.add(scroll, BorderLayout.CENTER);
 
         loadCourses(cboCourses);
@@ -176,6 +185,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.studentsInCourse(item.id);
             }
+
             @Override
             protected void done() {
                 try {
@@ -189,7 +199,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     }
                     studentsInCourseTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Enrollment ID", "Student ID", "Status" }));
-                    UIStyles.styleTable(studentsInCourseTable);
+                    styleTable(studentsInCourseTable);
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -202,17 +212,23 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildCoursesByFacultyTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel top = new JPanel(new GridBagLayout());
-        top.setBackground(UIStyles.CARD);
+        RoundedPanel top = new RoundedPanel();
+        top.setRadius(8);
+        top.setShadow(false);
+        top.setFill(UIStyles.CARD_HOVER);
+        top.setLayout(new GridBagLayout());
+        top.setBorder(new EmptyBorder(12, 12, 12, 12));
+
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 6, 6, 6);
         g.anchor = GridBagConstraints.WEST;
-        cboFaculty = new JComboBox<>();
-        JLabel lbl = new JLabel("Select faculty:");
-        lbl.setFont(UIStyles.BODY_FONT);
+        cboFaculty = new javax.swing.JComboBox<>();
+        javax.swing.JLabel lbl = new javax.swing.JLabel("Select faculty:");
+        lbl.setFont(UIStyles.BODY);
+        lbl.setForeground(UIStyles.INK);
         top.add(lbl, g);
         g.gridx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
@@ -221,14 +237,17 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         g.gridx = 2;
         g.fill = GridBagConstraints.NONE;
         g.weightx = 0;
-        JButton load = button("Load", UIStyles.PRIMARY, e -> loadCoursesByFaculty());
+        RoundedButton load = new RoundedButton("Load");
+        load.applyPrimary();
+        load.addActionListener(e -> loadCoursesByFaculty());
         top.add(load, g);
 
         panel.add(top, BorderLayout.NORTH);
 
         coursesByFacultyTable = new JTable();
         JScrollPane scroll = new JScrollPane(coursesByFacultyTable);
-        scroll.setBorder(UIStyles.line());
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(coursesByFacultyTable);
         panel.add(scroll, BorderLayout.CENTER);
 
         loadFaculty(cboFaculty);
@@ -247,6 +266,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.coursesByFaculty(item.id);
             }
+
             @Override
             protected void done() {
                 try {
@@ -261,7 +281,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     }
                     coursesByFacultyTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Course Code", "Course Name", "Department", "Credits" }));
-                    UIStyles.styleTable(coursesByFacultyTable);
+                    styleTable(coursesByFacultyTable);
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -274,17 +294,23 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildCourseAttendanceTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel top = new JPanel(new GridBagLayout());
-        top.setBackground(UIStyles.CARD);
+        RoundedPanel top = new RoundedPanel();
+        top.setRadius(8);
+        top.setShadow(false);
+        top.setFill(UIStyles.CARD_HOVER);
+        top.setLayout(new GridBagLayout());
+        top.setBorder(new EmptyBorder(12, 12, 12, 12));
+
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 6, 6, 6);
         g.anchor = GridBagConstraints.WEST;
-        JComboBox<EnrollmentPanel.ComboItem> cbo = new JComboBox<>();
-        JLabel lbl = new JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY_FONT);
+        javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo = new javax.swing.JComboBox<>();
+        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
+        lbl.setFont(UIStyles.BODY);
+        lbl.setForeground(UIStyles.INK);
         top.add(lbl, g);
         g.gridx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
@@ -293,7 +319,9 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         g.gridx = 2;
         g.fill = GridBagConstraints.NONE;
         g.weightx = 0;
-        JButton load = button("Load", UIStyles.PRIMARY, e -> {
+        RoundedButton load = new RoundedButton("Load");
+        load.applyPrimary();
+        load.addActionListener(e -> {
             EnrollmentPanel.ComboItem it = (EnrollmentPanel.ComboItem) cbo.getSelectedItem();
             if (it != null) {
                 loadCourseAttendance(it.id);
@@ -305,7 +333,8 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
         attendanceSummaryTable = new JTable();
         JScrollPane scroll = new JScrollPane(attendanceSummaryTable);
-        scroll.setBorder(UIStyles.line());
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(attendanceSummaryTable);
         panel.add(scroll, BorderLayout.CENTER);
 
         loadCourses(cbo);
@@ -319,6 +348,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.courseAttendanceSummary(courseId);
             }
+
             @Override
             protected void done() {
                 try {
@@ -334,7 +364,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     }
                     attendanceSummaryTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Student ID", "Name", "Present", "Late", "Absent", "Total", "% Attendance" }));
-                    UIStyles.styleTable(attendanceSummaryTable);
+                    styleTable(attendanceSummaryTable);
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -347,17 +377,23 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildCourseResultsTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel top = new JPanel(new GridBagLayout());
-        top.setBackground(UIStyles.CARD);
+        RoundedPanel top = new RoundedPanel();
+        top.setRadius(8);
+        top.setShadow(false);
+        top.setFill(UIStyles.CARD_HOVER);
+        top.setLayout(new GridBagLayout());
+        top.setBorder(new EmptyBorder(12, 12, 12, 12));
+
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 6, 6, 6);
         g.anchor = GridBagConstraints.WEST;
-        JComboBox<EnrollmentPanel.ComboItem> cbo = new JComboBox<>();
-        JLabel lbl = new JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY_FONT);
+        javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo = new javax.swing.JComboBox<>();
+        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
+        lbl.setFont(UIStyles.BODY);
+        lbl.setForeground(UIStyles.INK);
         top.add(lbl, g);
         g.gridx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
@@ -366,7 +402,9 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         g.gridx = 2;
         g.fill = GridBagConstraints.NONE;
         g.weightx = 0;
-        JButton load = button("Load", UIStyles.PRIMARY, e -> {
+        RoundedButton load = new RoundedButton("Load");
+        load.applyPrimary();
+        load.addActionListener(e -> {
             EnrollmentPanel.ComboItem it = (EnrollmentPanel.ComboItem) cbo.getSelectedItem();
             if (it != null) {
                 loadCourseResults(it.id);
@@ -378,7 +416,8 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
         courseResultsTable = new JTable();
         JScrollPane scroll = new JScrollPane(courseResultsTable);
-        scroll.setBorder(UIStyles.line());
+        scroll.getViewport().setBackground(UIStyles.CARD);
+        styleTable(courseResultsTable);
         panel.add(scroll, BorderLayout.CENTER);
 
         loadCourses(cbo);
@@ -392,6 +431,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.courseResults(courseId);
             }
+
             @Override
             protected void done() {
                 try {
@@ -411,7 +451,7 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     courseResultsTable.setModel(new javax.swing.table.DefaultTableModel(
                             data, new String[] { "Student ID", "Name", "Marks Obtained",
                                 "Max Marks", "Pass Marks", "Percentage", "Grade" }));
-                    UIStyles.styleTable(courseResultsTable);
+                    styleTable(courseResultsTable);
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -424,24 +464,36 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private JPanel buildOverallPerformanceTab() {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(UIStyles.CARD);
+        panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        JPanel stats = new JPanel(new java.awt.GridLayout(1, 4, 12, 0));
-        stats.setBackground(UIStyles.CARD);
-        perfTotal = valueLabel("0", UIStyles.PRIMARY);
-        perfPass = valueLabel("0", UIStyles.SUCCESS);
-        perfFail = valueLabel("0", UIStyles.DANGER);
-        perfAvg = valueLabel("0.00", UIStyles.INFO);
-        stats.add(statBox(perfTotal, "Total Results", UIStyles.PRIMARY));
-        stats.add(statBox(perfPass, "Passed", UIStyles.SUCCESS));
-        stats.add(statBox(perfFail, "Failed", UIStyles.DANGER));
-        stats.add(statBox(perfAvg, "Average %", UIStyles.INFO));
+        RoundedPanel stats = new RoundedPanel();
+        stats.setRadius(12);
+        stats.setShadow(false);
+        stats.setFill(UIStyles.CARD);
+        stats.setLayout(new java.awt.GridLayout(1, 4, 12, 0));
+        stats.setBorder(new EmptyBorder(16, 16, 16, 16));
+
+        perfTotalBox = statBox("Total Results", "0", UIStyles.PRIMARY);
+        perfPassBox = statBox("Passed", "0", UIStyles.SUCCESS);
+        perfFailBox = statBox("Failed", "0", UIStyles.DANGER);
+        perfAvgBox = statBox("Average %", "0.00", UIStyles.INFO);
+        perfTotalVal = findValueLabel(perfTotalBox);
+        perfPassVal = findValueLabel(perfPassBox);
+        perfFailVal = findValueLabel(perfFailBox);
+        perfAvgVal = findValueLabel(perfAvgBox);
+        stats.add(perfTotalBox);
+        stats.add(perfPassBox);
+        stats.add(perfFailBox);
+        stats.add(perfAvgBox);
         panel.add(stats, BorderLayout.NORTH);
 
-        JButton refresh = button("Refresh", UIStyles.PRIMARY, e -> loadOverallPerformance());
+        RoundedButton refresh = new RoundedButton("Refresh");
+        refresh.applyPrimary();
+        refresh.addActionListener(e -> loadOverallPerformance());
+
         JPanel top = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        top.setBackground(UIStyles.CARD);
+        top.setOpaque(false);
         top.add(refresh);
         panel.add(top, BorderLayout.SOUTH);
 
@@ -449,27 +501,42 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         return panel;
     }
 
-    private JLabel valueLabel(String text, Color c) {
-        JLabel val = new JLabel(text);
-        val.setFont(UIStyles.CARD_VALUE_FONT);
-        val.setForeground(c);
-        return val;
-    }
+    private ui.components.RoundedPanel statBox(String label, String value, Color c) {
+        ui.components.RoundedPanel box = new ui.components.RoundedPanel();
+        box.setRadius(8);
+        box.setShadow(false);
+        box.setFill(UIStyles.CARD);
+        box.setLayout(new BorderLayout(8, 6));
+        box.setBorder(new EmptyBorder(14, 14, 14, 14));
 
-    private JPanel statBox(JLabel value, String label, Color c) {
-        JPanel box = new JPanel(new java.awt.BorderLayout(8, 6));
-        box.setBackground(UIStyles.CARD);
-        box.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(UIStyles.LINE, 1),
-                new EmptyBorder(14, 14, 14, 14)));
-        value.setFont(UIStyles.CARD_VALUE_FONT);
-        value.setForeground(c);
-        JLabel lab = new JLabel(label);
-        lab.setFont(UIStyles.CARD_LABEL_FONT);
+        javax.swing.JLabel val = new javax.swing.JLabel(value);
+        val.setFont(UIStyles.CARD_VALUE);
+        val.setForeground(c);
+
+        javax.swing.JLabel lab = new javax.swing.JLabel(label);
+        lab.setFont(UIStyles.CARD_LABEL);
         lab.setForeground(UIStyles.MUTED);
-        box.add(value, BorderLayout.CENTER);
+
+        box.add(val, BorderLayout.CENTER);
         box.add(lab, BorderLayout.SOUTH);
         return box;
+    }
+
+    private void setStat(javax.swing.JLabel label, String value) {
+        label.setText(value);
+    }
+
+    private javax.swing.JLabel findValueLabel(javax.swing.JPanel panel) {
+        java.awt.Component[] comps = panel.getComponents();
+        for (java.awt.Component c : comps) {
+            if (c instanceof javax.swing.JLabel) {
+                javax.swing.JLabel l = (javax.swing.JLabel) c;
+                if (l.getFont().getSize() > 20) {
+                    return l;
+                }
+            }
+        }
+        return null;
     }
 
     private void loadOverallPerformance() {
@@ -499,14 +566,15 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                 s.avg = (withGrade == 0) ? 0.0 : sum / withGrade;
                 return s;
             }
+
             @Override
             protected void done() {
                 try {
                     PerfStats s = get();
-                    setStat(perfTotal, String.valueOf(s.total));
-                    setStat(perfPass, String.valueOf(s.pass));
-                    setStat(perfFail, String.valueOf(s.fail));
-                    setStat(perfAvg, String.format("%.2f", s.avg));
+                    setStat(perfTotalVal, String.valueOf(s.total));
+                    setStat(perfPassVal, String.valueOf(s.pass));
+                    setStat(perfFailVal, String.valueOf(s.fail));
+                    setStat(perfAvgVal, String.format("%.2f", s.avg));
                 } catch (Exception ex) {
                     showError("Report failed: " + ex.getMessage());
                 }
@@ -515,13 +583,9 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         worker.execute();
     }
 
-    private void setStat(JLabel label, String value) {
-        label.setText(value);
-    }
-
     /* ---------- Combo loaders ---------- */
 
-    private void loadCourses(JComboBox<EnrollmentPanel.ComboItem> cbo) {
+    private void loadCourses(javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo) {
         SwingWorker<List<EnrollmentPanel.ComboItem>, Void> worker =
                 new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
             @Override
@@ -534,11 +598,12 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                 }
                 return list;
             }
+
             @Override
             protected void done() {
                 try {
                     List<EnrollmentPanel.ComboItem> list = get();
-                    cbo.setModel(new DefaultComboBoxModel<>(
+                    cbo.setModel(new javax.swing.DefaultComboBoxModel<>(
                             list.toArray(new EnrollmentPanel.ComboItem[0])));
                 } catch (Exception ex) {
                     showError("Failed to load courses: " + ex.getMessage());
@@ -548,24 +613,25 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         worker.execute();
     }
 
-    private void loadFaculty(JComboBox<EnrollmentPanel.ComboItem> cbo) {
+    private void loadFaculty(javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo) {
         SwingWorker<List<EnrollmentPanel.ComboItem>, Void> worker =
                 new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
             @Override
             protected List<EnrollmentPanel.ComboItem> doInBackground() throws Exception {
                 List<EnrollmentPanel.ComboItem> list = new ArrayList<>();
                 FacultyDAO dao = new FacultyDAO();
-                for (model.Faculty f : dao.findAll()) {
+                for (Faculty f : dao.findAll()) {
                     list.add(new EnrollmentPanel.ComboItem(f.getId(),
                             f.getFacultyId() + " - " + f.getFullName()));
                 }
                 return list;
             }
+
             @Override
             protected void done() {
                 try {
                     List<EnrollmentPanel.ComboItem> list = get();
-                    cbo.setModel(new DefaultComboBoxModel<>(
+                    cbo.setModel(new javax.swing.DefaultComboBoxModel<>(
                             list.toArray(new EnrollmentPanel.ComboItem[0])));
                 } catch (Exception ex) {
                     showError("Failed to load faculty: " + ex.getMessage());
@@ -583,6 +649,24 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         loadOverallPerformance();
     }
 
+    protected void styleTable(JTable table) {
+        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
+        table.setShowHorizontalLines(false);
+        table.setShowVerticalLines(false);
+        table.setIntercellSpacing(new Dimension(0, 0));
+        table.setSelectionBackground(UIStyles.SELECTION);
+        table.setSelectionForeground(UIStyles.INK);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
+        table.getTableHeader().setBackground(UIStyles.PRIMARY);
+        table.getTableHeader().setForeground(UIStyles.INVERSE);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.getTableHeader().setBorder(
+                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
+        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
+        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
+            }
+
     private static final class PerfStats {
         int total;
         int pass;
@@ -590,4 +674,6 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
         double avg;
     }
 }
+
+
 

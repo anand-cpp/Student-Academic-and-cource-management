@@ -1,221 +1,230 @@
 package util;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Insets;
+import java.awt.RenderingHints;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.JLabel;
 
 /**
- * Reusable Swing styling system.
+ * Professional design system for the Student Academic & Course Management System.
  *
- * <p>Provides a consistent navy / indigo / white design system with restrained
- * accent colors. Every panel uses these helpers so buttons, labels, tables and
- * cards look identical across the application. This avoids duplicated styling
- * logic and keeps the UI maintainable.
- *
- * <p>Color roles:
- *   PRIMARY   - deep navy (sidebar, header, primary buttons)
- *   ACCENT    - indigo (secondary buttons, active states)
- *   SUCCESS   - green (save, success feedback)
- *   DANGER    - red (delete, destructive feedback)
- *   WARNING   - amber (warning feedback)
- *   INFO      - light blue (informational feedback)
- *   INK       - near-black text
- *   MUTED     - gray secondary text
- *   CARD      - white panel background
- *   LINE      - light gray borders
- *   ROW_ALT   - very light gray alternating table row
+ * <p>Color palette (navy / indigo / white with restrained accents):<br>
+ *   PRIMARY   - Deep navy (#1e293b) - sidebar, header, primary actions<br>
+ *   PRIMARY_DARK - Darker navy (#0f172a) - active states, depth<br>
+ *   ACCENT    - Indigo (#4f46e5) - secondary actions, links, highlights<br>
+ *   ACCENT_DARK - Darker indigo (#4338ca) - active accent<br>
+ *   ACCENT_LIGHT - Light indigo tint (#e8e8f9) - active sidebar bg<br>
+ *   SUCCESS   - Emerald (#10b981) - save, success feedback<br>
+ *   SUCCESS_LIGHT - Light green tint<br>
+ *   DANGER    - Rose (#ef4444) - delete, destructive actions<br>
+ *   DANGER_LIGHT - Light red tint<br>
+ *   WARNING   - Amber (#f59e0b) - warnings, cautions<br>
+ *   WARNING_LIGHT - Light amber tint<br>
+ *   INFO      - Blue (#3b82f6) - information, neutral actions<br>
+ *   INFO_LIGHT - Light blue tint<br>
+ *   INK       - Slate-900 (#0f172a) - primary text<br>
+ *   BODY      - Slate-700 (#334155) - secondary text<br>
+ *   MUTED     - Slate-500 (#64748b) - placeholder, captions<br>
+ *   MUTED_LIGHT - Slate-400 (#94a3b8) - lighter muted text<br>
+ *   CARD      - White (#ffffff) - panel backgrounds<br>
+ *   CARD_HOVER - Slate-50 (#f8fafc) - hover state<br>
+ *   LINE      - Slate-200 (#e2e8f0) - borders, dividers<br>
+ *   ROW_ALT   - Slate-50 (#f8fafc) - alternating table rows<br>
+ *   SELECTION - Slate-200 (#e2e8f0) - table selection bg<br>
+ *   SHADOW    - Soft black for elevation effects<br>
+ *   INVERSE   - White text on dark backgrounds
  */
 public final class UIStyles {
 
-    public static final Color PRIMARY = new Color(31, 41, 55);       // navy #1f2937
-    public static final Color PRIMARY_DARK = new Color(17, 24, 39);  // #111827
-    public static final Color ACCENT = new Color(79, 70, 229);       // indigo #4f46e5
-    public static final Color ACCENT_DARK = new Color(67, 56, 202);  // #4338ca
-    public static final Color SUCCESS = new Color(16, 185, 129);     // green #10a57d-ish
-    public static final Color DANGER = new Color(220, 38, 38);       // red #dc2626
-    public static final Color WARNING = new Color(217, 119, 6);      // amber
-    public static final Color INFO = new Color(59, 130, 246);        // blue
-    public static final Color INK = new Color(15, 23, 42);           // #0f172a
-    public static final Color MUTED = new Color(100, 116, 139);      // #64748b
+    /* ---------- Color palette ---------- */
+    public static final Color PRIMARY = new Color(30, 41, 59);        // #1e293b
+    public static final Color PRIMARY_DARK = new Color(15, 23, 42);   // #0f172a
+    public static final Color ACCENT = new Color(79, 70, 229);        // #4f46e5
+    public static final Color ACCENT_DARK = new Color(67, 56, 202);   // #4338ca
+    public static final Color ACCENT_LIGHT = new Color(232, 232, 249); // light indigo tint
+    public static final Color SUCCESS = new Color(16, 185, 129);      // #10b981
+    public static final Color SUCCESS_LIGHT = new Color(209, 250, 229);
+    public static final Color DANGER = new Color(239, 68, 68);        // #ef4444
+    public static final Color DANGER_LIGHT = new Color(254, 226, 226);
+    public static final Color WARNING = new Color(245, 158, 11);      // #f59e0b
+    public static final Color WARNING_LIGHT = new Color(253, 230, 138);
+    public static final Color INFO = new Color(59, 130, 246);         // #3b82f6
+    public static final Color INFO_LIGHT = new Color(219, 234, 254);
+    public static final Color INK = new Color(15, 23, 42);            // #0f172a
+    public static final Color TEXT_BODY = new Color(51, 65, 85);      // #334155
+    public static final Color MUTED = new Color(100, 116, 139);       // #64748b
+    public static final Color MUTED_LIGHT = new Color(148, 163, 184); // #94a3b8
     public static final Color CARD = Color.WHITE;
-    public static final Color LINE = new Color(226, 232, 240);       // #e2e8f0
-    public static final Color ROW_ALT = new Color(247, 249, 252);    // #f7f9fc
+    public static final Color CARD_HOVER = new Color(248, 250, 252);  // #f8fafc
+    public static final Color LINE = new Color(226, 232, 240);        // #e2e8f0
+    public static final Color ROW_ALT = new Color(248, 250, 252);     // #f8fafc
     public static final Color SELECTION = new Color(226, 232, 240);
+    public static final Color SHADOW = new Color(0, 0, 0, 40);
+    public static final Color INVERSE = Color.WHITE;
 
-    public static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 22);
-    public static final Font HEADER_FONT = new Font("Segoe UI", Font.BOLD, 16);
-    public static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    /* ---------- Typography ---------- */
+    public static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 24);
+    public static final Font H1 = new Font("Segoe UI", Font.BOLD, 20);
+    public static final Font H2 = new Font("Segoe UI", Font.BOLD, 16);
+    public static final Font H3 = new Font("Segoe UI", Font.BOLD, 14);
+    public static final Font BODY_LG = new Font("Segoe UI", Font.PLAIN, 15);
     public static final Font BODY_FONT = new Font("Segoe UI", Font.PLAIN, 14);
-    public static final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
-    public static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 13);
-    public static final Font TABLE_HEADER_FONT = new Font("Segoe UI", Font.BOLD, 13);
-    public static final Font TABLE_FONT = new Font("Segoe UI", Font.PLAIN, 13);
-    public static final Font CARD_VALUE_FONT = new Font("Segoe UI", Font.BOLD, 28);
-    public static final Font CARD_LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font BODY_SM = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font CAPTION = new Font("Segoe UI", Font.PLAIN, 12);
+    public static final Font CAPTION_BOLD = new Font("Segoe UI", Font.BOLD, 12);
+    public static final Font BUTTON = new Font("Segoe UI", Font.BOLD, 13);
+    public static final Font BUTTON_SM = new Font("Segoe UI", Font.BOLD, 12);
+    public static final Font LABEL = new Font("Segoe UI", Font.BOLD, 13);
+    public static final Font TABLE_HEADER = new Font("Segoe UI", Font.BOLD, 13);
+    public static final Font TABLE_CELL = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font CARD_VALUE = new Font("Segoe UI", Font.BOLD, 32);
+    public static final Font CARD_LABEL = new Font("Segoe UI", Font.PLAIN, 13);
+    public static final Font SIDEBAR_ITEM = new Font("Segoe UI", Font.PLAIN, 14);
+    public static final Font SIDEBAR_BRAND = new Font("Segoe UI", Font.BOLD, 18);
 
-    private static final Insets BUTTON_PADDING = new Insets(8, 16, 8, 16);
+    /* Alias BODY to BODY_FONT for backward compatibility */
+    public static final Font BODY = BODY_FONT;
+
+    /* ---------- Spacing constants ---------- */
+    public static final int SPACE_2 = 4;
+    public static final int SPACE_3 = 8;
+    public static final int SPACE_4 = 16;
+    public static final int SPACE_5 = 20;
+    public static final int SPACE_6 = 24;
+    public static final int SPACE_8 = 32;
+    public static final int SPACE_10 = 40;
+    public static final int SPACE_12 = 48;
+
+    public static final int BORDER_RADIUS = 10;
+    public static final int BORDER_RADIUS_LG = 16;
+    public static final int TABLE_ROW_HEIGHT = 40;
+    public static final int HEADER_HEIGHT = 64;
+    public static final int SIDEBAR_WIDTH = 250;
 
     private UIStyles() {
         // Utility class - not instantiable
     }
 
-    public static void applyPrimaryButton(JButton button) {
-        styleButton(button, PRIMARY, Color.WHITE, PRIMARY_DARK);
+    /* ---------- Borders ---------- */
+
+    public static Border cardBorder() {
+        return BorderFactory.createCompoundBorder(
+                new LineBorder(LINE, 1, true),
+                new EmptyBorder(1, 1, 1, 1));
     }
 
-    public static void applyAccentButton(JButton button) {
-        styleButton(button, ACCENT, Color.WHITE, ACCENT_DARK);
+    public static Border inputBorder() {
+        return new LineBorder(LINE, 1, true);
     }
 
-    public static void applySuccessButton(JButton button) {
-        styleButton(button, SUCCESS, Color.WHITE, new Color(13, 148, 104));
+    public static Border inputFocusBorder() {
+        return new LineBorder(ACCENT, 2, true);
     }
 
-    public static void applyDangerButton(JButton button) {
-        styleButton(button, DANGER, Color.WHITE, new Color(185, 28, 28));
+    public static Border inputErrorBorder() {
+        return new LineBorder(DANGER, 2, true);
     }
 
-    public static void applyOutlineButton(JButton button) {
-        styleButton(button, CARD, INK, new Color(241, 245, 249));
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(LINE, 1),
-                new EmptyBorder(8, 16, 8, 16)));
+    public static Border sectionBorder() {
+        return new MatteBorder(0, 0, 1, 0, LINE);
     }
 
-    private static void styleButton(JButton button, Color bg, Color fg, Color hover) {
-        button.setBackground(bg);
-        button.setForeground(fg);
-        button.setFont(BUTTON_FONT);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setMargin(BUTTON_PADDING);
-        button.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        button.setOpaque(true);
-        button.setBorder(new EmptyBorder(8, 16, 8, 16));
-
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                button.setBackground(hover);
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                button.setBackground(bg);
-            }
-        });
-    }
-
-    public static JPanel card() {
-        JPanel panel = new JPanel();
-        panel.setBackground(CARD);
-        panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(LINE, 1),
-                new EmptyBorder(16, 16, 16, 16)));
-        return panel;
-    }
-
-    public static JLabel heading(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(HEADER_FONT);
-        label.setForeground(INK);
-        return label;
-    }
-
-    public static JLabel sub(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(SUBTITLE_FONT);
-        label.setForeground(MUTED);
-        return label;
-    }
-
-    public static JLabel fieldLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(BODY_FONT);
-        label.setForeground(INK);
-        return label;
-    }
-
-    public static void styleTable(JTable table) {
-        table.setFont(TABLE_FONT);
-        table.setRowHeight(30);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(SELECTION);
-        table.setSelectionForeground(INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(TABLE_HEADER_FONT);
-        table.getTableHeader().setBackground(PRIMARY);
-        table.getTableHeader().setForeground(Color.WHITE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 32));
-    }
-
-    /** Alternating row colors for readability. */
-    public static class AlternatingRowRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value,
-                    isSelected, hasFocus, row, column);
-            if (!isSelected) {
-                c.setBackground(row % 2 == 0 ? CARD : ROW_ALT);
-                c.setForeground(INK);
-            } else {
-                c.setBackground(SELECTION);
-                c.setForeground(INK);
-            }
-            setFont(TABLE_FONT);
-            return c;
-        }
-    }
-
-    /** Center-aligned numeric renderer. */
-    public static class CenterRenderer extends DefaultTableCellRenderer {
-        public CenterRenderer() {
-            setHorizontalAlignment(JLabel.CENTER);
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value,
-                    isSelected, hasFocus, row, column);
-            if (!isSelected) {
-                c.setBackground(row % 2 == 0 ? CARD : ROW_ALT);
-                c.setForeground(INK);
-            } else {
-                c.setBackground(SELECTION);
-                c.setForeground(INK);
-            }
-            setFont(TABLE_FONT);
-            return c;
-        }
-    }
-
-    public static Border empty(int top, int left, int bottom, int right) {
+    public static EmptyBorder empty(int top, int left, int bottom, int right) {
         return new EmptyBorder(top, left, bottom, right);
     }
 
-    public static Border line() {
-        return BorderFactory.createLineBorder(LINE, 1);
+    public static EmptyBorder empty(int all) {
+        return new EmptyBorder(all, all, all, all);
     }
+
+    public static Border line(Color color, int thickness) {
+        return new LineBorder(color, thickness, true);
+    }
+
+    /* ---------- Rendering hints ---------- */
+
+    public static void applyQualityHints(java.awt.Graphics2D g2) {
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_NORMALIZE);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    }
+
+    /* ---------- Typography helpers ---------- */
+
+    public static JLabel heading1(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(H1);
+        l.setForeground(INK);
+        return l;
+    }
+
+    public static JLabel heading2(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(H2);
+        l.setForeground(INK);
+        return l;
+    }
+
+    public static JLabel heading3(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(H3);
+        l.setForeground(INK);
+        return l;
+    }
+
+    public static JLabel body(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(BODY);
+        l.setForeground(TEXT_BODY);
+        return l;
+    }
+
+    public static JLabel caption(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(CAPTION);
+        l.setForeground(MUTED);
+        return l;
+    }
+
+    public static JLabel captionBold(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(CAPTION_BOLD);
+        l.setForeground(MUTED);
+        return l;
+    }
+
+    public static JLabel fieldLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(LABEL);
+        l.setForeground(INK);
+        return l;
+    }
+
+    public static JLabel fieldCaption(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(CAPTION);
+        l.setForeground(MUTED);
+        return l;
+    }
+
+    /* ---------- Dimension helpers ---------- */
 
     public static Dimension pref(int w, int h) {
         return new Dimension(w, h);
+    }
+
+    public static boolean isDark(Color c) {
+        return (0.299 * c.getRed() + 0.587 * c.getGreen() + 0.114 * c.getBlue()) < 186;
+    }
+
+    public static Color contrast(Color c) {
+        return isDark(c) ? INVERSE : INK;
     }
 }
