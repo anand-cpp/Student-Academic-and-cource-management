@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Academic & Course Management System — Deployment Diagram</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-left: 1.75rem;
+    }
+    
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1400px;
+      display: block;
+    }
+    
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    
+    .card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.375rem;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .toolbar-toggle {
+      background: transparent;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      transition: color 0.2s, background 0.2s;
+    }
+    .toolbar-toggle:hover { color: #94a3b8; background: rgba(30, 41, 59, 0.5); }
+    .toolbar-actions {
+      display: none;
+      gap: 0.5rem;
+    }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-actions button:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: white;
+      border-color: #475569;
+    }
+
+    @media print {
+      body { background: #020617; padding: 1rem; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Deployment Diagram</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">📋 Copy</button>
+            <button onclick="downloadPNG(this)">🖼️ PNG</button>
+            <button onclick="downloadPDF(this)">📄 PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Export options" aria-label="Export options">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">JDK 21 · MySQL 8.4 · JDBC · Java Swing · Windows Laptop</p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1400 900">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- =================================================================
+             NODE: User Laptop (Deployment Node)
+             ================================================================= -->
+        <rect x="40" y="60" width="520" height="780" rx="16" fill="rgba(30, 41, 59, 0.15)" stroke="#94a3b8" stroke-width="2" stroke-dasharray="8,4"/>
+        <rect x="40" y="60" width="520" height="30" rx="8" fill="rgba(30, 41, 59, 0.8)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="300" y="78" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle">Node: Developer Laptop (Windows 11)</text>
+        <text x="60" y="100" fill="#94a3b8" font-size="10" font-weight="600">Hardware:</text>
+        <text x="60" y="116" fill="#94a3b8" font-size="10">CPU: Intel Core i7/i9</text>
+        <text x="60" y="130" fill="#94a3b8" font-size="8">RAM: 16GB DDR4</text>
+        <text x="60" y="144" fill="#94a3b8" font-size="8">Storage: 512GB SSD</text>
+        <text x="60" y="158" fill="#94a3b8" font-size="10" font-weight="600">OS:</text>
+        <text x="60" y="172" fill="#94a3b8" font-size="10">Windows 11 (64-bit)</text>
+        <text x="60" y="186" fill="#94a3b8" font-size="10" font-weight="600">JDK:</text>
+        <text x="60" y="200" fill="#94a3b8" font-size="10">OpenJDK 21</text>
+
+        <!-- =================================================================
+             NODE: MySQL Server
+             ================================================================= -->
+        <rect x="580" y="60" width="820" height="400" rx="16" fill="rgba(76, 29, 149, 0.1)" stroke="#a78bfa" stroke-width="2" stroke-dasharray="8,4"/>
+        <rect x="580" y="60" width="820" height="30" rx="8" fill="rgba(76, 29, 149, 0.8)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="990" y="78" fill="#a78bfa" font-size="14" font-weight="700" text-anchor="middle">Node: MySQL Server 8.4 (localhost:3306)</text>
+        <text x="590" y="100" fill="#94a3b8" font-size="10" font-weight="600">Host:</text>
+        <text x="620" y="100" fill="#94a3b8" font-size="10">localhost (127.0.0.1)</text>
+        <text x="590" y="114" fill="#94a3b8" font-size="10" font-weight="600">Port:</text>
+        <text x="630" y="114" fill="#94a3b8" font-size="10">3306</text>
+        <text x="590" y="128" fill="#94a3b8" font-size="10" font-weight="600">Database:</text>
+        <text x="680" y="128" fill="#94a3b8" font-size="10">student_academic_management</text>
+        <text x="590" y="142" fill="#94a3b8" font-size="10" font-weight="600">Storage:</text>
+        <text x="650" y="142" fill="#94a3b8" font-size="10">InnoDB</text>
+        <text x="590" y="156" fill="#94a3b8" font-size="10" font-weight="600">Character Set:</text>
+        <text x="690" y="156" fill="#94a3b8" font-size="10">utf8mb4</text>
+        <text x="590" y="170" fill="#94a3b8" font-size="10" font-weight="600">Tables:</text>
+        <text x="650" y="170" fill="#94a3b8" font-size="10">students, faculty, courses,</text>
+        <text x="650" y="184" fill="#94a3b8" font-size="10">enrollments, attendance, results</text>
+        <text x="590" y="198" fill="#94a3b8" font-size="10" font-weight="600">Driver:</text>
+        <text x="650" y="198" fill="#94a3b8" font-size="10">mysql-connector-j 8.3.0</text>
+
+        <!-- =================================================================
+             APPLICATION COMPONENTS (inside Laptop Node)
+             ================================================================= -->
+        <rect x="70" y="200" width="460" height="620" rx="12" fill="rgba(15, 23, 42, 0.6)" stroke="#1e293b" stroke-width="1"/>
+        <text x="80" y="218" fill="#cbd5e1" font-size="11" font-weight="600">Application Components</text>
+
+        <!-- MainFrame -->
+        <rect x="80" y="240" width="120" height="90" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="140" y="258" fill="white" font-size="11" font-weight="600" text-anchor="middle">MainFrame</text>
+        <text x="140" y="274" fill="#94a3b8" font-size="8" text-anchor="middle">JFrame</text>
+        <text x="140" y="288" fill="#94a3b8" font-size="8" text-anchor="middle">CardLayout</text>
+        <text x="140" y="302" fill="#94a3b8" font-size="8" text-anchor="middle">setVisible(true)</text>
+
+        <!-- Panels Group -->
+        <rect x="220" y="240" width="300" height="560" rx="8" fill="rgba(30, 41, 59, 0.3)" stroke="#1e293b" stroke-width="1"/>
+        <text x="370" y="258" fill="#cbd5e1" font-size="10" font-weight="600">Module Panels</text>
+
+        <!-- DashboardPanel -->
+        <rect x="230" y="270" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="290" fill="white" font-size="10" font-weight="600" text-anchor="middle">DashboardPanel</text>
+        <text x="370" y="306" fill="#94a3b8" font-size="8" text-anchor="middle">Live stats from MySQL</text>
+        <text x="370" y="320" fill="#94a3b8" font-size="8" text-anchor="middle">DashboardPanel</text>
+
+        <!-- StudentPanel -->
+        <rect x="230" y="350" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="370" fill="white" font-size="10" font-weight="600" text-anchor="middle">StudentPanel</text>
+        <text x="370" y="386" fill="#94a3b8" font-size="8" text-anchor="middle">CRUD + Search + Edit</text>
+
+        <!-- FacultyPanel -->
+        <rect x="230" y="430" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="450" fill="white" font-size="10" font-weight="600" text-anchor="middle">FacultyPanel</text>
+        <text x="370" y="466" fill="#94a3b8" font-size="8" text-anchor="middle">CRUD + Search + Edit</text>
+
+        <!-- CoursePanel -->
+        <rect x="230" y="510" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="530" fill="white" font-size="10" font-weight="600" text-anchor="middle">CoursePanel</text>
+        <text x="370" y="546" fill="#94a3b8" font-size="8" text-anchor="middle">CRUD + Faculty Assignment</text>
+
+        <!-- EnrollmentPanel -->
+        <rect x="230" y="590" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="610" fill="white" font-size="10" font-weight="600" text-anchor="middle">EnrollmentPanel</text>
+        <text x="370" y="626" fill="#94a3b8" font-size="8" text-anchor="middle">Transactional Enrollment</text>
+
+        <!-- AttendancePanel -->
+        <rect x="230" y="670" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="690" fill="white" font-size="10" font-weight="600" text-anchor="middle">AttendancePanel</text>
+        <text x="370" y="706" fill="#94a3b8" font-size="8" text-anchor="middle">Mark / Summary</text>
+
+        <!-- ResultPanel -->
+        <rect x="230" y="750" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="770" fill="white" font-size="10" font-weight="600" text-anchor="middle">ResultPanel</text>
+        <text x="370" y="786" fill="#94a3b8" font-size="8" text-anchor="middle">Marks + Grade</text>
+
+        <!-- ReportsPanel -->
+        <rect x="230" y="830" width="280" height="70" rx="6" fill="rgba(30, 41, 59, 0.6)" stroke="#475569" stroke-width="1"/>
+        <text x="370" y="850" fill="white" font-size="10" font-weight="600" text-anchor="middle">ReportsPanel</text>
+        <text x="370" y="866" fill="#94a3b8" font-size="8" text-anchor="middle">6 Report Types</text>
+
+        <!-- =================================================================
+             SERVICE LAYER (inside Laptop Node)
+             ================================================================= -->
+        <rect x="80" y="920" width="460" height="140" rx="8" fill="rgba(30, 41, 59, 0.6)" stroke="#1e293b" stroke-width="1"/>
+        <text x="90" y="938" fill="#cbd5e1" font-size="10" font-weight="600">Service Layer (Business Rules)</text>
+        <text x="80" y="954" fill="#94a3b8" font-size="9" text-anchor="start">StudentService · FacultyService · CourseService · EnrollmentService</text>
+        <text x="80" y="968" fill="#94a3b8" font-size="9" text-anchor="start">AttendanceService · ResultService · ReportService · GradeService</text>
+        <text x="80" y="982" fill="#94a3b8" font-size="9" text-anchor="start">+ InputValidator · DateUtils · UIStyles · AppException</text>
+
+        <!-- =================================================================
+             DAO LAYER (inside Laptop Node)
+             ================================================================= -->
+        <rect x="80" y="1060" width="460" height="140" rx="8" fill="rgba(30, 41, 59, 0.6)" stroke="#1e293b" stroke-width="1"/>
+        <text x="90" y="1078" fill="#cbd5e1" font-size="10" font-weight="600">DAO Layer (JDBC)</text>
+        <text x="80" y="1094" fill="#94a3b8" font-size="9" text-anchor="start">StudentDAO · FacultyDAO · CourseDAO · EnrollmentDAO</text>
+        <text x="80" y="1108" fill="#94a3b8" font-size="9" text-anchor="start">AttendanceDAO · ResultDAO — PreparedStatement · try-with-resources · commit/rollback</text>
+
+        <!-- =================================================================
+             DATABASE NODE
+             ================================================================= -->
+        <rect x="600" y="500" width="780" height="260" rx="12" fill="rgba(76, 29, 149, 0.1)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="6,4"/>
+        <rect x="600" y="500" width="780" height="24" rx="8" fill="rgba(76, 29, 149, 0.8)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="990" y="518" fill="#a78bfa" font-size="13" font-weight="700" text-anchor="middle">MySQL Server 8.4 — student_academic_management</text>
+        
+        <!-- Tables inside MySQL -->
+        <rect x="610" y="540" width="240" height="220" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="730" y="558" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">students</text>
+        <text x="620" y="574" fill="#94a3b8" font-size="8">id PK, student_id UK,</text>
+        <text x="620" y="588" fill="#94a3b8" font-size="8">roll_number UK, full_name,</text>
+        <text x="620" y="602" fill="#94a3b8" font-size="8">email UK, phone, address,</text>
+        <text x="620" y="616" fill="#94a3b8" font-size="8">date_of_birth, department,</text>
+        <text x="620" y="630" fill="#94a3b8" font-size="8">semester, admission_date</text>
+
+        <rect x="870" y="540" width="240" height="220" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="990" y="558" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">courses</text>
+        <text x="880" y="574" fill="#94a3b8" font-size="8">id PK, course_code UK,</text>
+        <text x="880" y="588" fill="#94a3b8" font-size="8">course_name, department,</text>
+        <text x="880" y="602" fill="#94a3b8" font-size="8">semester, credits,</text>
+        <text x="880" y="616" fill="#94a3b8" font-size="8">maximum_marks,</text>
+        <text x="880" y="630" fill="#94a3b8" font-size="8">passing_marks,</text>
+        <text x="880" y="644" fill="#94a3b8" font-size="8">assigned_faculty_id FK</text>
+
+        <rect x="1130" y="540" width="240" height="220" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="1250" y="558" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">enrollments</text>
+        <text x="1140" y="574" fill="#94a3b8" font-size="8">id PK, student_id FK,</text>
+        <text x="1140" y="588" fill="#94a3b8" font-size="8">course_id FK, enrollment_date,</text>
+        <text x="1140" y="602" fill="#94a3b8" font-size="8">status ENUM,</text>
+        <text x="1140" y="616" fill="#a78bfa" font-size="8">UK(student_id, course_id)</text>
+
+        <rect x="610" y="770" width="240" height="100" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="730" y="788" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">attendance</text>
+        <text x="620" y="804" fill="#94a3b8" font-size="8">id PK, enrollment_id FK,</text>
+        <text x="620" y="818" fill="#94a3b8" font-size="8">class_date, status</text>
+        <text x="620" y="832" fill="#a78bfa" font-size="8">UK(enrollment_id, class_date)</text>
+
+        <rect x="870" y="770" width="240" height="100" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="990" y="788" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">results</text>
+        <text x="880" y="804" fill="#94a3b8" font-size="8">id PK, enrollment_id FK UK,</text>
+        <text x="880" y="818" fill="#94a3b8" font-size="8">marks_obtained,</text>
+        <text x="880" y="832" fill="#94a3b8" font-size="8">percentage, grade</text>
+
+        <rect x="1130" y="770" width="240" height="100" rx="8" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="1250" y="788" fill="#a78bfa" font-size="11" font-weight="600" text-anchor="middle">faculty</text>
+        <text x="1140" y="804" fill="#94a3b8" font-size="8">id PK, faculty_id UK,</text>
+        <text x="1140" y="818" fill="#94a3b8" font-size="8">employee_id UK, full_name,</text>
+        <text x="1140" y="832" fill="#94a3b8" font-size="8">email UK, phone, address,</text>
+        <text x="1140" y="846" fill="#94a3b8" font-size="8">date_of_birth, department,</text>
+        <text x="1140" y="860" fill="#94a3b8" font-size="8">designation, specialization</text>
+
+        <!-- =================================================================
+             CONNECTION LINES
+             ================================================================= -->
+        <!-- User Laptop -> MySQL Server -->
+        <line x1="560" y1="300" x2="580" y2="260" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrowhead)"/>
+        <text x="550" y="320" fill="#94a3b8" font-size="9" text-anchor="middle">JDBC Connection</text>
+        <text x="550" y="336" fill="#94a3b8" font-size="8">jdbc:mysql://localhost:3306/...</text>
+
+        <!-- App Components -> MySQL (through DAO) -->
+        <line x1="370" y1="880" x2="600" y2="540" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="460" y="870" fill="#94a3b8" font-size="8">DAO: PreparedStatement</text>
+
+        <line x1="370" y1="880" x2="730" y2="540" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="370" y1="880" x2="990" y2="540" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- User Laptop -> MySQL (multiple panels) -->
+        <line x1="300" y1="840" x2="610" y2="540" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="330" y="815" fill="#94a3b8" font-size="8">All panels → DB via DAO</text>
+
+        <!-- =================================================================
+             LEGEND
+             ================================================================= -->
+        <text x="1250" y="500" fill="white" font-size="10" font-weight="600">Legend</text>
+        <rect x="1250" y="512" width="16" height="10" rx="2" fill="rgba(30, 41, 59, 0.15)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="1272" y="520" fill="#94a3b8" font-size="8">Deployment Node</text>
+        <rect x="1250" y="532" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="1272" y="528" fill="#94a3b8" font-size="8">Application Component</text>
+        <line x1="1250" y1="538" x2="1266" y2="538" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="1272" y="523" fill="#22d3ee" font-size="8">JDBC Connection</text>
+        <rect x="1250" y="544" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="1272" y="552" fill="#a78bfa" font-size="8">Database Table</text>
+        <rect x="1250" y="560" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.2)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="1272" y="568" fill="#a78bfa" font-size="8">Database Row</text>
+      </svg>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Client Node</h3>
+        </div>
+        <ul>
+          <li>• Windows 11</li>
+          <li>• JDK 21 (OpenJDK)</li>
+          <li>• Java Swing UI</li>
+          <li>• No build tools</li>
+          <li>• Compiles with javac</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Server Node</h3>
+        </div>
+        <ul>
+          <li>• MySQL Server 8.4</li>
+          <li>• InnoDB Engine</li>
+          <li>• localhost:3306</li>
+          <li>• utf8mb4 charset</li>
+          <li>• 6 Tables</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot amber"></div>
+          <h3>Connectivity</h3>
+        </div>
+        <ul>
+          <li>• JDBC Driver</li>
+          <li>• mysql-connector-j</li>
+          <li>• 8.3.0</li>
+          <li>• PreparedStatement</li>
+          <li>• try-with-resources</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Student Academic & Course Management System • Deployment Diagram • JDK 21 + MySQL + JDBC
+    </p>
+  </div>
+
+  <script>
+    async function copyAsImage(btn) {
+      const orig = btn.textContent;
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btn.textContent = '✓ Copied!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPNG(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const link = document.createElement('a');
+        link.download = 'diagram-deployment.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.textContent = '✓ Done!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPDF(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('diagram-deployment.pdf');
+        btn.textContent = '✓ Done!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  </script>
+</body>
+</html>

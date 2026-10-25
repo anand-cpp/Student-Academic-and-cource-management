@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Academic & Course Management System — Architecture Diagram</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-left: 1.75rem;
+    }
+    
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 1200px;
+      display: block;
+    }
+    
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    
+    .card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.375rem;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: auto;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .toolbar-toggle {
+      background: transparent;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.375rem;
+      transition: color 0.2s, background 0.2s;
+    }
+    .toolbar-toggle:hover { color: #94a3b8; background: rgba(30, 41, 59, 0.5); }
+    .toolbar-actions {
+      display: none;
+      gap: 0.5rem;
+    }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar-actions button {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      color: #94a3b8;
+      padding: 0.375rem 0.75rem;
+      border-radius: 0.375rem;
+      font-family: inherit;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-actions button:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: white;
+      border-color: #475569;
+    }
+
+    @media print {
+      body { background: #020617; padding: 1rem; }
+      .toolbar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>Student Academic & Course Management System</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">📋 Copy</button>
+            <button onclick="downloadPNG(this)">🖼️ PNG</button>
+            <button onclick="downloadPDF(this)">📄 PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="Export options" aria-label="Export options">⋯</button>
+        </div>
+      </div>
+      <p class="subtitle">Layered Architecture — JDK 21 · MySQL 8.4 · JDBC · Java Swing</p>
+    </div>
+
+    <!-- Main Diagram -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 1200 820">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+          </marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- =================================================================
+             REGION: External Users
+             ================================================================= -->
+        <rect x="30" y="120" width="280" height="140" rx="12" fill="rgba(30, 41, 59, 0.15)" stroke="#94a3b8" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="42" y="140" fill="#fbbf24" font-size="10" font-weight="600">External Users</text>
+        <rect x="44" y="160" width="100" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="94" y="180" fill="white" font-size="11" font-weight="600" text-anchor="middle">Academic Admin</text>
+        <text x="94" y="196" fill="#94a3b8" font-size="9" text-anchor="middle">College Staff</text>
+
+        <!-- =================================================================
+             REGION: Presentation Layer (Swing UI)
+             ================================================================= -->
+        <rect x="350" y="60" width="820" height="640" rx="12" fill="rgba(251, 191, 36, 0.05)" stroke="#fbbf24" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="362" y="78" fill="#fbbf24" font-size="10" font-weight="600">Presentation Layer — Java Swing</text>
+
+        <!-- Sidebar Navigation -->
+        <rect x="360" y="120" width="140" height="480" rx="8" fill="rgba(30, 41, 59, 0.6)" stroke="#1e293b" stroke-width="1.5"/>
+        <text x="368" y="138" fill="#cbd5e1" font-size="9" font-weight="600">Sidebar</text>
+        <text x="368" y="154" fill="#94a3b8" font-size="8" text-anchor="start">Dashboard</text>
+        <text x="368" y="168" fill="#94a3b8" font-size="8" text-anchor="start">Students</text>
+        <text x="368" y="182" fill="#94a3b8" font-size="8" text-anchor="start">Faculty</text>
+        <text x="368" y="196" fill="#94a3b8" font-size="8" text-anchor="start">Courses</text>
+        <text x="368" y="210" fill="#94a3b8" font-size="8" text-anchor="start">Enrollments</text>
+        <text x="368" y="224" fill="#94a3b8" font-size="8" text-anchor="start">Attendance</text>
+        <text x="368" y="238" fill="#94a3b8" font-size="8" text-anchor="start">Results</text>
+        <text x="368" y="252" fill="#94a3b8" font-size="8" text-anchor="start">Reports</text>
+        <text x="368" y="266" fill="#94a3b8" font-size="8" text-anchor="start">Exit</text>
+
+        <!-- Main Content Area -->
+        <rect x="520" y="120" width="620" height="480" rx="8" fill="rgba(15, 23, 42, 0.7)" stroke="#1e293b" stroke-width="1.5"/>
+        <text x="528" y="138" fill="#cbd5e1" font-size="10" font-weight="600">Module Panel (CardLayout)</text>
+        <text x="528" y="154" fill="#94a3b8" font-size="8" text-anchor="start">Live tables · Forms · Search ·</text>
+        <text x="528" y="168" fill="#94a3b8" font-size="8" text-anchor="start">Summary cards · Feedback</text>
+
+        <!-- =================================================================
+             REGION: Service Layer
+             ================================================================= -->
+        <rect x="350" y="620" width="820" height="160" rx="12" fill="rgba(6, 78, 59, 0.08)" stroke="#34d399" stroke-width="1" stroke-dasharray="6,4"/>
+        <text x="362" y="638" fill="#34d399" font-size="10" font-weight="600">Service Layer — Business Rules & Validation</text>
+
+        <!-- StudentService -->
+        <rect x="360" y="660" width="130" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="425" y="680" fill="white" font-size="11" font-weight="600" text-anchor="middle">StudentService</text>
+        <text x="425" y="696" fill="#94a3b8" font-size="9" text-anchor="middle">validation · uniqueness</text>
+
+        <!-- FacultyService -->
+        <rect x="510" y="660" width="130" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="575" y="680" fill="white" font-size="11" font-weight="600" text-anchor="middle">FacultyService</text>
+        <text x="575" y="696" fill="#94a3b8" font-size="9" text-anchor="middle">validation · uniqueness</text>
+
+        <!-- CourseService -->
+        <rect x="660" y="660" width="130" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="725" y="680" fill="white" font-size="11" font-weight="600" text-anchor="middle">CourseService</text>
+        <text x="725" y="696" fill="#94a3b8" font-size="9" text-anchor="middle">marks validation</text>
+
+        <!-- EnrollmentService -->
+        <rect x="810" y="660" width="140" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="880" y="680" fill="white" font-size="11" font-weight="600" text-anchor="middle">EnrollmentService</text>
+        <text x="880" y="696" fill="#94a3b8" font-size="9" text-anchor="middle">transactions · dup check</text>
+
+        <!-- AttendanceService -->
+        <rect x="960" y="660" width="170" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="1045" y="680" fill="white" font-size="11" font-weight="600" text-anchor="middle">AttendanceService</text>
+        <text x="1045" y="696" fill="#94a3b8" font-size="9" text-anchor="middle">percentage rule</text>
+
+        <!-- ResultService -->
+        <rect x="360" y="720" width="130" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="425" y="740" fill="white" font-size="11" font-weight="600" text-anchor="middle">ResultService</text>
+        <text x="425" y="756" fill="#94a3b8" font-size="9" text-anchor="middle">BigDecimal · Grade</text>
+
+        <!-- GradeService -->
+        <rect x="510" y="720" width="110" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="565" y="740" fill="white" font-size="11" font-weight="600" text-anchor="middle">GradeService</text>
+        <text x="565" y="756" fill="#94a3b8" font-size="9" text-anchor="middle">A–F scale</text>
+
+        <!-- ReportService -->
+        <rect x="640" y="720" width="120" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="700" y="740" fill="white" font-size="11" font-weight="600" text-anchor="middle">ReportService</text>
+        <text x="700" y="756" fill="#94a3b8" font-size="9" text-anchor="middle">SQL aggregations</text>
+
+        <!-- =================================================================
+             REGION: DAO Layer
+             ================================================================= -->
+        <rect x="350" y="790" width="820" height="60" rx="12" fill="rgba(30, 41, 59, 0.1)" stroke="#475569" stroke-width="1" stroke-dasharray="6,4"/>
+        <text x="362" y="808" fill="#94a3b8" font-size="10" font-weight="600">DAO Layer — PreparedStatement · try-with-resources · commit/rollback</text>
+        <text x="460" y="790" width="620" height="40" fill="#94a3b8" font-size="9" text-anchor="middle">StudentDAO · FacultyDAO · CourseDAO · EnrollmentDAO · AttendanceDAO · ResultDAO — all SQL via PreparedStatement, resources closed with try-with-resources, commit/rollback for multi-step ops</text>
+
+        <!-- =================================================================
+             REGION: Database
+             ================================================================= -->
+        <rect x="350" y="860" width="820" height="260" rx="12" fill="rgba(76, 29, 149, 0.08)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="362" y="878" fill="#a78bfa" font-size="10" font-weight="600">Persistence Layer — MySQL 8.4 (InnoDB)</text>
+
+        <!-- students table -->
+        <rect x="370" y="900" width="150" height="130" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="445" y="920" fill="white" font-size="11" font-weight="600" text-anchor="middle">students</text>
+        <text x="445" y="935" fill="#a78bfa" font-size="8" text-anchor="middle">• id PK</text>
+        <text x="445" y="949" fill="#94a3b8" font-size="8" text-anchor="middle">• student_id UK</text>
+        <text x="445" y="963" fill="#94a3b8" font-size="8" text-anchor="middle">• roll_number UK</text>
+        <text x="445" y="977" fill="#94a3b8" font-size="8" text-anchor="middle">• email UK</text>
+        <text x="445" y="991" fill="#94a3b8" font-size="8" text-anchor="middle">• department · semester</text>
+
+        <!-- faculty table -->
+        <rect x="540" y="900" width="150" height="130" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="615" y="920" fill="white" font-size="11" font-weight="600" text-anchor="middle">faculty</text>
+        <text x="615" y="935" fill="#a78bfa" font-size="8" text-anchor="middle">• id PK</text>
+        <text x="615" y="949" fill="#94a3b8" font-size="8" text-anchor="middle">• faculty_id UK</text>
+        <text x="615" y="963" fill="#94a3b8" font-size="8" text-anchor="middle">• employee_id UK</text>
+        <text x="615" y="977" fill="#94a3b8" font-size="8" text-anchor="middle">• email UK</text>
+
+        <!-- courses table -->
+        <rect x="710" y="900" width="150" height="130" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="785" y="920" fill="white" font-size="11" font-weight="600" text-anchor="middle">courses</text>
+        <text x="785" y="935" fill="#a78bfa" font-size="8" text-anchor="middle">• id PK</text>
+        <text x="785" y="949" fill="#94a3b8" font-size="8" text-anchor="middle">• course_code UK</text>
+        <text x="785" y="963" fill="#94a3b8" font-size="8" text-anchor="middle">• credits · marks</text>
+        <text x="785" y="977" fill="#94a3b8" font-size="8" text-anchor="middle">• assigned_faculty</text>
+
+        <!-- enrollments table -->
+        <rect x="370" y="1040" width="150" height="70" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="445" y="1058" fill="white" font-size="11" font-weight="600" text-anchor="middle">enrollments</text>
+        <text x="445" y="1073" fill="#94a3b8" font-size="8" text-anchor="middle">• student_id FK</text>
+        <text x="445" y="1087" fill="#94a3b8" font-size="8" text-anchor="middle">• course_id FK</text>
+        <text x="445" y="1101" fill="#a78bfa" font-size="8" text-anchor="middle">• UK(student,course)</text>
+
+        <!-- attendance table -->
+        <rect x="540" y="1040" width="150" height="70" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="615" y="1058" fill="white" font-size="11" font-weight="600" text-anchor="middle">attendance</text>
+        <text x="615" y="1073" fill="#94a3b8" font-size="8" text-anchor="middle">• enrollment_id FK</text>
+        <text x="615" y="1087" fill="#94a3b8" font-size="8" text-anchor="middle">• class_date</text>
+        <text x="615" y="1101" fill="#a78bfa" font-size="8" text-anchor="middle">• status(P/A/L)</text>
+
+        <!-- results table -->
+        <rect x="710" y="1040" width="150" height="70" rx="6" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="785" y="1058" fill="white" font-size="11" font-weight="600" text-anchor="middle">results</text>
+        <text x="785" y="1073" fill="#94a3b8" font-size="8" text-anchor="middle">• enrollment_id FK UK</text>
+        <text x="785" y="1087" fill="#94a3b8" font-size="8" text-anchor="middle">• marks · percentage</text>
+        <text x="785" y="1101" fill="#a78bfa" font-size="8" text-anchor="middle">• grade</text>
+
+        <!-- JDBC Driver -->
+        <rect x="960" y="920" width="160" height="70" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="1040" y="938" fill="white" font-size="11" font-weight="600" text-anchor="middle">mysql-connector-j</text>
+        <text x="1040" y="954" fill="#94a3b8" font-size="9" text-anchor="middle">8.3.0 · driver JAR</text>
+        <text x="1040" y="970" fill="#94a3b8" font-size="9" text-anchor="middle">com.mysql.cj.jdbc.Driver</text>
+
+        <!-- =================================================================
+             ARROWS: External → UI
+             ================================================================= -->
+        <line x1="144" y1="220" x2="350" y2="360" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="260" y="295" fill="#94a3b8" font-size="9" text-anchor="middle">Swing UI actions</text>
+
+        <!-- =================================================================
+             ARROWS: UI → Service
+             ================================================================= -->
+        <line x1="830" y1="360" x2="425" y2="658" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="610" y="520" fill="#94a3b8" font-size="9">calls service methods</text>
+
+        <line x1="830" y1="360" x2="575" y2="658" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="830" y1="360" x2="725" y2="658" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <line x1="830" y1="360" x2="880" y2="658" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <line x1="830" y1="360" x2="1045" y2="658" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <line x1="830" y1="360" x2="425" y2="718" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="830" y1="360" x2="565" y2="718" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="830" y1="360" x2="700" y2="718" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- =================================================================
+             ARROWS: Service → DAO
+             ================================================================= -->
+        <line x1="485" y1="710" x2="445" y2="900" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="635" y1="710" x2="615" y2="900" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="785" y1="710" x2="785" y2="900" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="950" y1="710" x2="615" y2="1040" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="950" y1="710" x2="785" y2="1040" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="425" y1="790" x2="445" y2="900" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="565" y1="790" x2="615" y2="900" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- =================================================================
+             ARROWS: DAO → DB
+             ================================================================= -->
+        <line x1="515" y1="1030" x2="515" y2="900" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="535" y="970" fill="#94a3b8" font-size="8">PreparedStatement</text>
+
+        <line x1="540" y1="1050" x2="445" y2="1040" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="540" y1="1050" x2="615" y2="1040" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="540" y1="1050" x2="785" y2="1040" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- =================================================================
+             ARROWS: Service → JDBC Driver
+             ================================================================= -->
+        <line x1="880" y1="685" x2="1040" y2="920" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="970" y="810" fill="#94a3b8" font-size="8">JDBC connection</text>
+
+        <!-- =================================================================
+             LEGEND
+             ================================================================= -->
+        <text x="1080" y="140" fill="white" font-size="10" font-weight="600">Legend</text>
+        <rect x="1080" y="152" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+        <text x="1102" y="160" fill="#94a3b8" font-size="8">Frontend (Swing)</text>
+        <rect x="1080" y="170" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+        <text x="1102" y="178" fill="#94a3b8" font-size="8">Service Layer</text>
+        <rect x="1080" y="186" width="16" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+        <text x="1102" y="194" fill="#94a3b8" font-size="8">DAO Layer</text>
+        <rect x="1080" y="202" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+        <text x="1102" y="210" fill="#94a3b8" font-size="8">Database</text>
+        <line x1="1080" y1="222" x2="1096" y2="222" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="1102" y="225" fill="#94a3b8" font-size="8">Call / Dependency</text>
+        <line x1="1080" y1="234" x2="1096" y2="234" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="1102" y="237" fill="#94a3b8" font-size="8">SQL Query</text>
+      </svg>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="cards">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>Technology Stack</h3>
+        </div>
+        <ul>
+          <li>• JDK 21 · Java Swing</li>
+          <li>• MySQL 8.4 · InnoDB</li>
+          <li>• JDBC · PreparedStatement</li>
+          <li>• mysql-connector-j 8.3.0</li>
+          <li>• No build tools (javac/java)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot emerald"></div>
+          <h3>Modules</h3>
+        </div>
+        <ul>
+          <li>• Students · Faculty · Courses</li>
+          <li>• Enrollments · Attendance</li>
+          <li>• Results · Reports</li>
+          <li>• Dashboard · Login</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot violet"></div>
+          <h3>Database</h3>
+        </div>
+        <ul>
+          <li>• 6 tables</li>
+          <li>• FK: RESTRICT / SET NULL</li>
+          <li>• UNIQUE constraints</li>
+          <li>• CHECK constraints</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      Student Academic & Course Management System • JDK 21 + MySQL + JDBC • Architecture Diagram
+    </p>
+  </div>
+
+  <script>
+    async function copyAsImage(btn) {
+      const orig = btn.textContent;
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        btn.textContent = '✓ Copied!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPNG(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const link = document.createElement('a');
+        link.download = 'diagram-architecture.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.textContent = '✓ Done!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+
+    async function downloadPDF(btn) {
+      const orig = btn.textContent;
+      btn.textContent = '⏳ ...';
+      try {
+        const el = document.getElementById('report-container');
+        const r = el.getBoundingClientRect();
+        const pad = 32;
+        const canvas = await html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: (e) => e.classList && e.classList.contains('toolbar'), x: r.left + window.scrollX - pad, y: r.top + window.scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        const orientation = canvas.width > canvas.height ? 'landscape' : 'portrait';
+        const pdf = new jsPDF({ orientation, unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save('diagram-architecture.pdf');
+        btn.textContent = '✓ Done!';
+      } catch (e) {
+        btn.textContent = '✗ Failed';
+      }
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  </script>
+</body>
+</html>
