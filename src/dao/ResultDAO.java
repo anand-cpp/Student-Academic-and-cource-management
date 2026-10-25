@@ -78,6 +78,11 @@ public class ResultDAO {
             ps.setBigDecimal(3, result.getPercentage());
             ps.setString(4, result.getGrade());
             ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    result.setId(keys.getInt(1));
+                }
+            }
         } catch (SQLException ex) {
             if (isDuplicate(ex)) {
                 throw new AppException("DUPLICATE", "A result already exists for this enrollment.", ex);
@@ -121,6 +126,21 @@ public class ResultDAO {
             throw new AppException("DB_ERROR", "Failed to count results.", ex);
         }
         return 0;
+    }
+
+    /** Mean percentage across every recorded result. Returns 0 when there are none. */
+    public double averagePercentage() throws AppException {
+        String sql = "SELECT AVG(percentage) FROM results";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException ex) {
+            throw new AppException("DB_ERROR", "Failed to calculate average academic percentage.", ex);
+        }
+        return 0.0;
     }
 
     /** Course-wise results summary: average percentage and pass/fail counts. */

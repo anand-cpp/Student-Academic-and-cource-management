@@ -1,33 +1,33 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.math.BigDecimal;
 import java.util.List;
+import javax.swing.BoxLayout;
 import javax.swing.JPanel;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import model.Course;
 import service.CourseService;
+import ui.components.AppIcon;
+import ui.components.DataCard;
+import ui.components.FormField;
+import ui.components.FormPanel;
+import ui.components.RoundedButton;
+import ui.components.SearchField;
+import ui.components.SectionHeader;
+import ui.components.TableCard;
 import util.AppException;
 import util.InputValidator;
-import ui.components.FormField;
-import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
-import ui.components.SectionHeader;
 import util.UIStyles;
 
 /**
- * Course management panel: add, view, search, update, delete courses and assign faculty.
+ * Course catalogue: codes, credits, assessment bounds and faculty assignment.
  */
 public class CoursePanel extends BasePanel {
 
@@ -39,7 +39,10 @@ public class CoursePanel extends BasePanel {
             fCredits, fMaximumMarks, fPassingMarks, fAssignedFacultyId;
 
     private JTable table;
+    private TableCard tableCard;
+    private SearchField search;
     private int selectedId = -1;
+    private List<Course> displayed = List.of();
 
     public CoursePanel(MainFrame main) {
         super(main);
@@ -48,37 +51,67 @@ public class CoursePanel extends BasePanel {
     }
 
     private void buildUI() {
-        JPanel header = sectionHeader("Courses",
-                "Manage courses, credits, marks, and faculty assignment.");
+        SectionHeader head = header("Module 04 \u00B7 Curriculum", "Courses",
+                "The course catalogue: codes, credits, assessment bounds and faculty assignment.");
+        add(head, BorderLayout.NORTH);
 
-        JPanel toolbar = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 12, 0));
+        table = buildTable(new Object[0][0],
+                new String[]{"Code", "Course", "Dept.", "Sem.", "Credits"});
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && table.getSelectedRow() >= 0) {
+                loadSelectedRow();
+            }
+        });
+
+        tableCard = tableCard("Course catalogue", "Every course offered this term.",
+                table, "The catalogue is empty",
+                "Add the first course on the right. Codes must be unique.");
+        RoundedButton cardRefresh = iconButton(AppIcon.Glyph.REFRESH, "Reload courses");
+        cardRefresh.addActionListener(e -> refreshData());
+        tableCard.getCard().addHeaderAction(cardRefresh);
+
+        JPanel body = pageBody();
+
+        JPanel toolbar = new JPanel(new BorderLayout(12, 0));
         toolbar.setOpaque(false);
-        toolbar.setBorder(new EmptyBorder(0, 0, 12, 0));
+        toolbar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JTextField search = new JTextField();
-        search.setFont(UIStyles.BODY);
-        search.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
-        search.setPreferredSize(new Dimension(340, 40));
-        search.setToolTipText("Search by course code, name or department");
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        left.setOpaque(false);
+        search = new SearchField("Search by course code, name or department");
+        search.addActionListener(e -> doSearch(search.getText(), true));
+        RoundedButton searchBtn = new RoundedButton("Search", AppIcon.Glyph.SEARCH);
+        searchBtn.applyOutline();
+        searchBtn.addActionListener(e -> doSearch(search.getText(), true));
+        RoundedButton refresh = new RoundedButton("Refresh", AppIcon.Glyph.REFRESH);
+        refresh.applyGhost();
+        refresh.addActionListener(e -> refreshData());
+        left.add(search);
+        left.add(searchBtn);
+        left.add(refresh);
 
-        RoundedButton btnSearch = new RoundedButton("Search");
-        btnSearch.applyAccent();
-        btnSearch.addActionListener(e -> doSearch(search.getText()));
+        RoundedButton addNew = new RoundedButton("New course", AppIcon.Glyph.PLUS);
+        addNew.applyPrimary();
+        addNew.addActionListener(e -> clearForm());
 
-        RoundedButton btnRefresh = new RoundedButton("Refresh");
-        btnRefresh.applyGhost();
-        btnRefresh.addActionListener(e -> refreshData());
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(addNew);
 
-        RoundedButton btnAddNew = new RoundedButton("Add New");
-        btnAddNew.applyPrimary();
-        btnAddNew.addActionListener(e -> clearForm());
+        toolbar.add(left, BorderLayout.WEST);
+        toolbar.add(right, BorderLayout.EAST);
 
-        toolbar.add(new JLabel("  Search:"));
-        toolbar.add(search);
-        toolbar.add(btnSearch);
-        toolbar.add(btnRefresh);
-        toolbar.add(btnAddNew);
+        JPanel split = new JPanel(new BorderLayout(16, 0));
+        split.setOpaque(false);
+        split.add(tableCard, BorderLayout.CENTER);
+        split.add(buildEditor(), BorderLayout.EAST);
 
+        body.add(toolbar, BorderLayout.NORTH);
+        body.add(split, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
+    }
+
+    private JPanel buildEditor() {
         fCourseCode = new FormField("CS101");
         fCourseName = new FormField("Database Systems");
         fDepartment = new FormField("Computer Science");
@@ -88,95 +121,75 @@ public class CoursePanel extends BasePanel {
         fPassingMarks = new FormField("40");
         fAssignedFacultyId = new FormField("1 (optional)");
 
-        RoundedPanel formCard = new RoundedPanel();
-        formCard.setRadius(12);
-        formCard.setShadow(false);
-        formCard.setFill(UIStyles.CARD);
-        formCard.setLayout(new GridBagLayout());
-        formCard.setBorder(new EmptyBorder(20, 20, 20, 20));
+        DataCard editor = card("Course details", "Select a row to edit, or enter a new course.");
+        FormPanel form = new FormPanel();
 
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(8, 8, 8, 8);
-        g.anchor = GridBagConstraints.WEST;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        g.gridx = 0;
-        g.gridy = 0;
+        form.addRow(field("Course code *", fCourseCode, "Unique, e.g. CS101"));
+        form.addRow(field("Course name *", fCourseName, null));
+        form.addRow(field("Department *", fDepartment, null));
 
-        g.gridwidth = 2;
-        addFormRow(formCard, g, "Course Code *", fCourseCode);
-        addFormRow(formCard, g, "Course Name *", fCourseName);
-        addFormRow(formCard, g, "Department *", fDepartment);
-        addFormRow(formCard, g, "Semester *", fSemester);
-        addFormRow(formCard, g, "Credits *", fCredits);
-        addFormRow(formCard, g, "Maximum Marks *", fMaximumMarks);
-        addFormRow(formCard, g, "Passing Marks *", fPassingMarks);
-        addFormRow(formCard, g, "Assigned Faculty ID (optional)", fAssignedFacultyId);
-        g.gridwidth = 1;
+        JPanel pair1 = new JPanel(new GridLayout(1, 2, 10, 0));
+        pair1.setOpaque(false);
+        pair1.add(field("Semester *", fSemester, "1\u20138"));
+        pair1.add(field("Credits *", fCredits, "1\u20136"));
+        form.addRow(pair1);
 
-        JPanel formActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        formActions.setOpaque(false);
-        RoundedButton btnSave = new RoundedButton("Save");
-        btnSave.applySuccess();
-        btnSave.addActionListener(e -> doSave());
-        RoundedButton btnUpdate = new RoundedButton("Update");
-        btnUpdate.applyAccent();
-        btnUpdate.addActionListener(e -> doUpdate());
-        RoundedButton btnDelete = new RoundedButton("Delete");
-        btnDelete.applyDanger();
-        btnDelete.addActionListener(e -> doDelete());
-        RoundedButton btnClear = new RoundedButton("Reset");
-        btnClear.applyGhost();
-        btnClear.addActionListener(e -> clearForm());
-        formActions.add(btnSave);
-        formActions.add(btnUpdate);
-        formActions.add(btnDelete);
-        formActions.add(btnClear);
+        JPanel pair2 = new JPanel(new GridLayout(1, 2, 10, 0));
+        pair2.setOpaque(false);
+        pair2.add(field("Maximum marks *", fMaximumMarks, null));
+        pair2.add(field("Passing marks *", fPassingMarks, null));
+        form.addRow(pair2);
 
-        g.gridx = 0;
-        g.gridy++;
-        g.gridwidth = 2;
-        g.anchor = GridBagConstraints.WEST;
-        formCard.add(formActions, g);
+        form.addRow(field("Assigned faculty ID", fAssignedFacultyId, "Optional \u00B7 must exist in faculty"), 18);
 
-        JPanel formWrap = new JPanel(new BorderLayout());
-        formWrap.setOpaque(false);
-        formWrap.setPreferredSize(new Dimension(420, 0));
-        formWrap.add(formCard, BorderLayout.NORTH);
+        JPanel actions = new JPanel(new GridLayout(2, 2, 8, 8));
+        actions.setOpaque(false);
+        RoundedButton save = new RoundedButton("Save", AppIcon.Glyph.SAVE);
+        save.applyPrimary();
+        save.addActionListener(e -> doSave());
+        RoundedButton update = new RoundedButton("Update", AppIcon.Glyph.EDIT);
+        update.applyOutline();
+        update.addActionListener(e -> doUpdate());
+        RoundedButton delete = new RoundedButton("Delete", AppIcon.Glyph.TRASH);
+        delete.applyDanger();
+        delete.addActionListener(e -> doDelete());
+        RoundedButton reset = new RoundedButton("Reset", AppIcon.Glyph.RESET);
+        reset.applyGhost();
+        reset.addActionListener(e -> clearForm());
+        actions.add(save);
+        actions.add(update);
+        actions.add(delete);
+        actions.add(reset);
+        form.addRow(actions, 10);
 
-        table = new JTable();
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(table);
+        JPanel note = new JPanel(new BorderLayout());
+        note.setOpaque(false);
+        javax.swing.JLabel noteText = new javax.swing.JLabel(
+                "<html>Passing marks cannot exceed maximum marks.<br>Faculty IDs are validated by the service.</html>");
+        noteText.setFont(UIStyles.CAPTION);
+        noteText.setForeground(UIStyles.MUTED);
+        note.add(noteText, BorderLayout.WEST);
+        form.addRow(note, 0);
+        form.addGlue();
 
-        table.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting() || table.getSelectedRow() < 0) {
-                return;
-            }
-            loadSelectedRow();
-        });
+        JScrollPane scroll = scroll(form);
+        scroll.setPreferredSize(new Dimension(342, 0));
+        editor.setBody(scroll);
 
-        JPanel content = new JPanel(new BorderLayout(16, 16));
-        content.setOpaque(false);
-        content.setBorder(new EmptyBorder(0, 20, 20, 20));
-        content.add(formWrap, BorderLayout.WEST);
-        content.add(scroll, BorderLayout.CENTER);
-
-        setLayout(new BorderLayout(0, 0));
-        add(header, BorderLayout.NORTH);
-        add(toolbar, BorderLayout.SOUTH);
-        add(content, BorderLayout.CENTER);
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.setPreferredSize(new Dimension(378, 0));
+        wrap.add(editor, BorderLayout.CENTER);
+        return wrap;
     }
 
-    private void addFormRow(JPanel form, GridBagConstraints g, String label, FormField field) {
-        JLabel l = UIStyles.fieldLabel(label);
-        l.setBorder(new EmptyBorder(0, 0, 4, 0));
-        g.gridx = 0;
-        form.add(l, g);
-        g.gridy++;
-        g.gridx = 0;
-        form.add(field, g);
-        g.gridy++;
+    private JPanel strut(int height) {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setPreferredSize(new Dimension(0, height));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+        p.setMinimumSize(new Dimension(0, height));
+        return p;
     }
 
     private void loadSelectedRow() {
@@ -184,52 +197,50 @@ public class CoursePanel extends BasePanel {
         if (row < 0) {
             return;
         }
-        selectedId = (Integer) table.getValueAt(row, 0);
-        fCourseCode.setText(valueOf(table.getValueAt(row, 1)));
-        fCourseName.setText(valueOf(table.getValueAt(row, 2)));
-        fDepartment.setText(valueOf(table.getValueAt(row, 3)));
-        fSemester.setText(valueOf(table.getValueAt(row, 4)));
-        fCredits.setText(String.valueOf(table.getValueAt(row, 5)));
-        fMaximumMarks.setText(valueOf(table.getValueAt(row, 6)));
-        fPassingMarks.setText(valueOf(table.getValueAt(row, 7)));
-        Object af = table.getValueAt(row, 8);
-        fAssignedFacultyId.setText(af == null ? "" : String.valueOf(af));
+        Course c = displayed.get(table.convertRowIndexToModel(row));
+        selectedId = c.getId();
+        fCourseCode.setText(valueOf(c.getCourseCode()));
+        fCourseName.setText(valueOf(c.getCourseName()));
+        fDepartment.setText(valueOf(c.getDepartment()));
+        fSemester.setText(valueOf(c.getSemester()));
+        fCredits.setText(valueOf(c.getCredits()));
+        fMaximumMarks.setText(valueOf(c.getMaximumMarks()));
+        fPassingMarks.setText(valueOf(c.getPassingMarks()));
+        fAssignedFacultyId.setText(c.getAssignedFacultyId() == null
+                ? "" : valueOf(c.getAssignedFacultyId()));
     }
 
     private String valueOf(Object v) {
         return v == null ? "" : String.valueOf(v);
     }
 
-    private void doSearch(String keyword) {
-        SwingWorker<List<Course>, Void> worker = new SwingWorker<List<Course>, Void>() {
+    /* ---------- Operations ---------- */
+
+    private void doSearch(String keyword, boolean notify) {
+        new SwingWorker<List<Course>, Void>() {
             @Override
             protected List<Course> doInBackground() throws Exception {
-                return service.search(keyword);
+                return service.search(keyword == null ? "" : keyword.trim());
             }
 
             @Override
             protected void done() {
                 try {
-                    fillTable(get());
+                    fillTable(get(), notify);
                 } catch (Exception ex) {
-                    showError("Search failed: " + ex.getMessage());
+                    showError("Search failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     private void doSave() {
         try {
-            BigDecimal max = InputValidator.decimal(fMaximumMarks.getText(), "Maximum marks");
-            BigDecimal pass = InputValidator.decimal(fPassingMarks.getText(), "Passing marks");
-            if (pass.compareTo(max) > 0) {
-                throw new AppException("OUT_OF_RANGE", "Passing marks cannot exceed maximum marks.");
-            }
+            validateMarks();
             service.create(readCourseCode(), readCourseName(), readDepartment(), readSemester(),
                     readCredits(), fMaximumMarks.getText(), fPassingMarks.getText(),
                     fAssignedFacultyId.getText());
-            showSuccess("Course saved successfully.");
+            showSuccess("Course \u201C" + readCourseCode() + "\u201D added to the catalogue.");
             clearForm();
             refreshData();
         } catch (AppException ex) {
@@ -239,19 +250,15 @@ public class CoursePanel extends BasePanel {
 
     private void doUpdate() {
         if (selectedId < 0) {
-            showWarning("Select a course from the table to update.");
+            showWarning("Select a course from the catalogue first.");
             return;
         }
         try {
-            BigDecimal max = InputValidator.decimal(fMaximumMarks.getText(), "Maximum marks");
-            BigDecimal pass = InputValidator.decimal(fPassingMarks.getText(), "Passing marks");
-            if (pass.compareTo(max) > 0) {
-                throw new AppException("OUT_OF_RANGE", "Passing marks cannot exceed maximum marks.");
-            }
+            validateMarks();
             service.update(selectedId, readCourseCode(), readCourseName(), readDepartment(),
                     readSemester(), readCredits(), fMaximumMarks.getText(), fPassingMarks.getText(),
                     fAssignedFacultyId.getText());
-            showSuccess("Course updated successfully.");
+            showSuccess("Course updated.");
             clearForm();
             refreshData();
         } catch (AppException ex) {
@@ -259,21 +266,30 @@ public class CoursePanel extends BasePanel {
         }
     }
 
+    private void validateMarks() throws AppException {
+        BigDecimal max = InputValidator.decimal(fMaximumMarks.getText(), "Maximum marks");
+        BigDecimal pass = InputValidator.decimal(fPassingMarks.getText(), "Passing marks");
+        if (pass.compareTo(max) > 0) {
+            throw new AppException("OUT_OF_RANGE", "Passing marks cannot exceed maximum marks.");
+        }
+    }
+
     private void doDelete() {
         if (selectedId < 0) {
-            showWarning("Select a course from the table to delete.");
+            showWarning("Select a course from the catalogue first.");
             return;
         }
         String name = fCourseName.getText();
-        if (!confirm("Delete course \"" + name + "\"?\n"
-                + "Allowed only if no enrollments, attendance or results reference it.", "Confirm Delete")) {
+        if (!confirmDanger("Delete course \u201C" + name + "\"?\n"
+                + "This is only allowed when no enrollments, attendance or results reference it.",
+                "Delete course")) {
             return;
         }
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Boolean, Void>() {
             private String error;
 
             @Override
-            protected Boolean doInBackground() throws Exception {
+            protected Boolean doInBackground() {
                 try {
                     service.delete(selectedId);
                     return true;
@@ -294,68 +310,85 @@ public class CoursePanel extends BasePanel {
                         showError(error);
                     }
                 } catch (Exception ex) {
-                    showError("Delete failed: " + ex.getMessage());
+                    showError("Delete failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
+
+    /* ---------- Helpers ---------- */
 
     private void refreshData() {
-        doSearch("");
+        doSearch("", false);
     }
 
-    private void fillTable(List<Course> list) {
-        Object[][] data = new Object[list.size()][9];
+    private void fillTable(List<Course> list, boolean notify) {
+        displayed = list;
+        Object[][] data = new Object[list.size()][5];
         for (int i = 0; i < list.size(); i++) {
             Course c = list.get(i);
-            data[i] = new Object[] {
-                c.getId(), c.getCourseCode(), c.getCourseName(), c.getDepartment(),
-                c.getSemester(), c.getCredits(), c.getMaximumMarks(),
-                c.getPassingMarks(), c.getAssignedFacultyId() == null ? "Unassigned" : c.getAssignedFacultyId()
+            data[i] = new Object[]{
+                c.getCourseCode(), c.getCourseName(), c.getDepartment(),
+                c.getSemester(), c.getCredits()
             };
         }
         replaceTableData(table, data,
-            new String[] { "ID", "Course Code", "Course Name", "Department", "Semester",
-                "Credits", "Max Marks", "Pass Marks", "Faculty ID" });
-        if (list.isEmpty()) {
-            showWarning("No courses found.");
+                new String[]{"Code", "Course", "Dept.", "Sem.", "Credits"});
+        setColumnWidths(table, 68, 158, 118, 44, 60);
+        tableCard.setSubtitle(list.isEmpty()
+                ? "No courses match the current search."
+                : "Every course offered this term.");
+        tableCard.setCount(list.size(), "course");
+        tableCard.sync();
+        if (notify && list.isEmpty()) {
+            showInfo("No courses match that search.");
+        }
+    }
+
+    private void hideColumns(JTable table, String... names) {
+        for (String name : names) {
+            javax.swing.table.TableColumn column = table.getColumn(name);
+            if (column != null) {
+                table.removeColumn(column);
+            }
         }
     }
 
     private void clearForm() {
         selectedId = -1;
-        fCourseCode.setText(""); fCourseName.setText(""); fDepartment.setText("");
-        fSemester.setText(""); fCredits.setText(""); fMaximumMarks.setText("");
-        fPassingMarks.setText(""); fAssignedFacultyId.setText("");
+        fCourseCode.setText("");
+        fCourseName.setText("");
+        fDepartment.setText("");
+        fSemester.setText("");
+        fCredits.setText("");
+        fMaximumMarks.setText("");
+        fPassingMarks.setText("");
+        fAssignedFacultyId.setText("");
         table.clearSelection();
+        fCourseCode.requestFocusInWindow();
     }
 
-    private String readCourseCode() { return fCourseCode.getText(); }
-    private String readCourseName() { return fCourseName.getText(); }
-    private String readDepartment() { return fDepartment.getText(); }
-    private String readSemester() { return fSemester.getText(); }
-    private String readCredits() { return fCredits.getText(); }
+    private String message(Exception ex) {
+        return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+    }
 
-    protected void styleTable(JTable table) {
-        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(UIStyles.SELECTION);
-        table.setSelectionForeground(UIStyles.INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
-        table.getTableHeader().setBackground(UIStyles.PRIMARY);
-        table.getTableHeader().setForeground(UIStyles.INVERSE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(
-                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
-            }
+    private String readCourseCode() {
+        return fCourseCode.getText();
+    }
+
+    private String readCourseName() {
+        return fCourseName.getText();
+    }
+
+    private String readDepartment() {
+        return fDepartment.getText();
+    }
+
+    private String readSemester() {
+        return fSemester.getText();
+    }
+
+    private String readCredits() {
+        return fCredits.getText();
+    }
 }
-
-
-
-

@@ -34,17 +34,7 @@ public class AttendanceService {
         if (courseDao.findById(courseId) == null) {
             throw new AppException("NOT_FOUND", "Course does not exist.");
         }
-        List<Map<String, Object>> rows = new java.util.ArrayList<>();
-        for (EnrollmentSummary e : enrollmentDao.findByCourse(courseId).stream()
-                .map(enr -> new EnrollmentSummary(enr.getId(), enr.getStudentId(), enr.getCourseId()))
-                .toList()) {
-            Map<String, Object> row = new java.util.HashMap<>();
-            row.put("enrollmentId", e.enrollmentId);
-            row.put("studentId", e.studentId);
-            row.put("courseId", e.courseId);
-            rows.add(row);
-        }
-        return rows;
+        return enrollmentDao.findRoster(courseId);
     }
 
     public List<Attendance> findByEnrollment(int enrollmentId) throws AppException {
@@ -111,6 +101,10 @@ public class AttendanceService {
             if (conn != null) {
                 try {
                     conn.setAutoCommit(true);
+                } catch (Exception ignored) {
+                }
+                try {
+                    conn.close();
                 } catch (Exception ignored) {
                 }
             }

@@ -1,7 +1,6 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -12,33 +11,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.JLabel;
+import javax.swing.DefaultCellEditor;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
-import javax.swing.BorderFactory;
 import javax.swing.table.DefaultTableModel;
 import dao.AttendanceDAO;
 import dao.CourseDAO;
 import model.Attendance;
 import service.AttendanceService;
-import util.AppException;
-import util.DateUtils;
+import ui.components.AppComboBox;
+import ui.components.AppIcon;
+import ui.components.DataCard;
 import ui.components.FormField;
 import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
 import ui.components.SectionHeader;
+import ui.components.TableCard;
+import util.AppException;
+import util.DateUtils;
 import util.UIStyles;
 
 /**
- * Attendance management panel.
+ * Attendance desk.
  *
- * <p>Workflow: select a course, pick a class date, load enrolled students, mark
- * each as Present/Absent/Late, then save. Existing marks for that date are
- * pre-filled so re-marking updates rather than duplicates.
+ * <p>Workflow: choose a course and class date, load the enrolled students, mark
+ * each row Present / Late / Absent, then save. Existing marks for that date are
+ * pre-filled, so re-marking updates rather than duplicates.
  *
  * <p>Percentage rule (documented, consistent): Late counts as attended.
  * Attendance % = (Present + Late) / Total recorded &times; 100.
@@ -49,10 +48,11 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
 
     private final AttendanceService service = new AttendanceService();
 
-    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboCourses;
-    private JTextField fClassDate;
+    private AppComboBox<EnrollmentPanel.ComboItem> cboCourses;
+    private FormField fClassDate;
     private JTable table;
     private DefaultTableModel model;
+    private TableCard tableCard;
 
     private int currentCourseId = -1;
     private LocalDate currentDate = null;
@@ -64,122 +64,116 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
     }
 
     private void buildUI() {
-        JPanel header = sectionHeader("Attendance",
-                "Mark and track attendance per course and date.");
+        SectionHeader head = header("Module 06 \u00B7 Presence", "Attendance",
+                "Load a class roster, mark presence, and keep the record for the day.");
+        add(head, BorderLayout.NORTH);
 
-        RoundedPanel controls = new RoundedPanel();
-        controls.setRadius(12);
-        controls.setShadow(false);
-        controls.setFill(UIStyles.CARD);
-        controls.setLayout(new GridBagLayout());
-        controls.setBorder(new EmptyBorder(16, 16, 16, 16));
+        JPanel body = pageBody();
+        body.add(buildControls(), BorderLayout.NORTH);
 
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(8, 8, 8, 8);
-        g.anchor = GridBagConstraints.WEST;
-        g.gridx = 0;
-        g.gridy = 0;
-
-        cboCourses = new javax.swing.JComboBox<>();
-        fClassDate = new JTextField();
-        fClassDate.setFont(UIStyles.BODY);
-        fClassDate.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
-        fClassDate.setToolTipText("Class date yyyy-MM-dd");
-        fClassDate.setPreferredSize(new Dimension(150, 34));
-
-        JLabel lblCrs = UIStyles.fieldLabel("Course *");
-        JLabel lblDate = UIStyles.fieldLabel("Class Date *");
-
-        addGrid(controls, g, lblCrs, cboCourses);
-        addGrid(controls, g, lblDate, fClassDate);
-        g.gridwidth = 1;
-
-        RoundedButton btnLoad = new RoundedButton("Load Students");
-        btnLoad.applyPrimary();
-        btnLoad.addActionListener(e -> doLoad());
-
-        RoundedButton btnSave = new RoundedButton("Save Attendance");
-        btnSave.applySuccess();
-        btnSave.addActionListener(e -> doSave());
-
-        RoundedButton btnRefresh = new RoundedButton("Refresh");
-        btnRefresh.applyGhost();
-        btnRefresh.addActionListener(e -> refreshData());
-
-        JPanel btns = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        btns.setOpaque(false);
-        btns.add(btnLoad);
-        btns.add(btnSave);
-        btns.add(btnRefresh);
-
-        g.gridx = 0;
-        g.gridy++;
-        g.gridwidth = 4;
-        controls.add(btns, g);
-
-        JPanel controlsWrap = new JPanel(new BorderLayout());
-        controlsWrap.setOpaque(false);
-        controlsWrap.add(controls, BorderLayout.NORTH);
-
-        model = new DefaultTableModel(
-                new Object[][] {},
-                new String[] { "Enrollment ID", "Student ID", "Name", "Status" }) {
+        model = new DefaultTableModel(new Object[][]{},
+                new String[]{"Enrollment ID", "Student ID", "Name", "Status"}) {
             private static final long serialVersionUID = 1L;
+
             @Override
             public boolean isCellEditable(int row, int column) {
                 return column == 3;
             }
         };
         table = new JTable(model);
+        styleTable(table);
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
-        styleTable(table);
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(UIStyles.CARD);
+        setColumnWidths(table, 0, 110, 220, 120);
 
-        JPanel summary = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        summary.setOpaque(false);
-        summary.setBorder(new EmptyBorder(6, 0, 0, 0));
-        JLabel lblSummary = new JLabel("Select a course and date, then load students to see attendance.");
-        lblSummary.setFont(UIStyles.CAPTION);
-        lblSummary.setForeground(UIStyles.MUTED);
-        summary.add(lblSummary);
+        AppComboBox<String> statusEditor = new AppComboBox<>();
+        statusEditor.addItem("PRESENT");
+        statusEditor.addItem("LATE");
+        statusEditor.addItem("ABSENT");
+        table.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(statusEditor));
 
-        setLayout(new BorderLayout(0, 0));
-        add(header, BorderLayout.NORTH);
-        JPanel topWrap = new JPanel(new BorderLayout());
-        topWrap.setOpaque(false);
-        topWrap.add(controlsWrap, BorderLayout.NORTH);
-        add(topWrap, BorderLayout.NORTH);
-        add(scroll, BorderLayout.CENTER);
-        add(summary, BorderLayout.SOUTH);
+        tableCard = tableCard("Class roster", "Choose a course and date, then load students.",
+                table, "No class loaded",
+                "Pick a course and a class date above, then press Load students to begin marking.");
+        tableCard.setCount(0, "student");
 
-        loadCourses();
+        RoundedButton save = new RoundedButton("Save attendance", AppIcon.Glyph.SAVE);
+        save.applyPrimary();
+        save.addActionListener(e -> doSave());
+        tableCard.getCard().addHeaderAction(save);
+
+        RoundedButton refresh = iconButton(AppIcon.Glyph.REFRESH, "Reset attendance view");
+        refresh.addActionListener(e -> refreshData());
+        tableCard.getCard().addHeaderAction(refresh);
+
+        model.addTableModelListener(e -> updateSummary());
+
+        body.add(tableCard, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
     }
 
-    private void addGrid(JPanel panel, GridBagConstraints g, JLabel label, java.awt.Component field) {
-        g.gridx = 0;
-        panel.add(label, g);
-        g.gridx = 1;
+    private JPanel buildControls() {
+        DataCard card = card("Class selection",
+                "Attendance is stored per enrollment, course and date.");
+
+        cboCourses = new AppComboBox<>();
+        fClassDate = new FormField("yyyy-MM-dd");
+        fClassDate.setText(LocalDate.now().toString());
+        fClassDate.setToolTipText("Class date yyyy-MM-dd");
+
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setOpaque(false);
+        form.setBorder(new EmptyBorder(16, 18, 18, 18));
+
+        GridBagConstraints g = new GridBagConstraints();
+        g.gridy = 0;
+        g.anchor = GridBagConstraints.NORTHWEST;
         g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        panel.add(field, g);
+        g.insets = new Insets(0, 0, 0, 12);
+
         g.gridx = 0;
-        g.gridy++;
-        g.fill = GridBagConstraints.NONE;
+        g.weightx = 1.0;
+        form.add(field("Course *", cboCourses, null), g);
+
+        g.gridx = 1;
+        g.weightx = 0.32;
+        form.add(field("Class date *", fClassDate, "yyyy-MM-dd"), g);
+
+        RoundedButton load = new RoundedButton("Load students", AppIcon.Glyph.STUDENTS);
+        load.applyOutline();
+        load.setPreferredSize(new Dimension(158, 38));
+        load.addActionListener(e -> doLoad());
+
+        RoundedButton refresh = new RoundedButton("Refresh", AppIcon.Glyph.REFRESH);
+        refresh.applyGhost();
+        refresh.addActionListener(e -> refreshData());
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        actions.setOpaque(false);
+        actions.add(load);
+        actions.add(javax.swing.Box.createHorizontalStrut(8));
+        actions.add(refresh);
+
+        g.gridx = 2;
         g.weightx = 0;
+        g.fill = GridBagConstraints.NONE;
+        g.insets = new Insets(20, 0, 0, 0);
+        form.add(actions, g);
+
+        card.setBody(form);
+        return card;
     }
+
+    /* ---------- Data ---------- */
 
     private void loadCourses() {
-        SwingWorker<List<EnrollmentPanel.ComboItem>, Void> worker =
-                new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
+        new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
             @Override
             protected List<EnrollmentPanel.ComboItem> doInBackground() throws Exception {
                 List<EnrollmentPanel.ComboItem> list = new ArrayList<>();
-                CourseDAO dao = new CourseDAO();
-                for (model.Course c : dao.findAll()) {
+                for (model.Course c : new CourseDAO().findAll()) {
                     list.add(new EnrollmentPanel.ComboItem(c.getId(),
-                            c.getCourseCode() + " - " + c.getCourseName()));
+                            c.getCourseCode() + " \u00B7 " + c.getCourseName()));
                 }
                 return list;
             }
@@ -188,23 +182,32 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
             protected void done() {
                 try {
                     List<EnrollmentPanel.ComboItem> list = get();
+                    EnrollmentPanel.ComboItem previous =
+                            (EnrollmentPanel.ComboItem) cboCourses.getSelectedItem();
                     cboCourses.setModel(new javax.swing.DefaultComboBoxModel<>(
                             list.toArray(new EnrollmentPanel.ComboItem[0])));
+                    if (previous != null) {
+                        for (int i = 0; i < cboCourses.getItemCount(); i++) {
+                            if (cboCourses.getItemAt(i).id == previous.id) {
+                                cboCourses.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    }
                 } catch (Exception ex) {
-                    showError("Failed to load courses: " + ex.getMessage());
+                    showError("Failed to load courses: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     private void doLoad() {
         EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboCourses.getSelectedItem();
         if (item == null) {
-            showWarning("No course available.");
+            showWarning("No course available. Add a course first.");
             return;
         }
-        String dateText = fClassDate.getText().trim();
+        String dateText = fClassDate.getText() == null ? "" : fClassDate.getText().trim();
         if (dateText.isEmpty()) {
             showWarning("Enter a class date (yyyy-MM-dd).");
             return;
@@ -224,7 +227,7 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
         currentCourseId = item.id;
         currentDate = date;
 
-        SwingWorker<List<Map<String, Object>>, Void> worker = new SwingWorker<List<Map<String, Object>>, Void>() {
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return service.enrollmentsForCourse(currentCourseId);
@@ -243,37 +246,39 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
                         if (!existing.isEmpty()) {
                             status = existing.get(0).getStatus();
                         }
-                        model.addRow(new Object[] {
+                        model.addRow(new Object[]{
                             enrollmentId, e.get("studentId"), e.get("studentName"), status
                         });
                     }
+                    tableCard.setSubtitle(date + " \u00B7 " + item.label);
+                    tableCard.sync();
+                    updateSummary();
                     if (enrollments.isEmpty()) {
-                        showWarning("No active students enrolled in this course.");
+                        showWarning("No active students are enrolled in this course.");
                     }
                 } catch (Exception ex) {
-                    showError("Failed to load students: " + ex.getMessage());
+                    showError("Failed to load students: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     private void doSave() {
         if (currentCourseId < 0 || currentDate == null) {
-            showWarning("Please load students first.");
+            showWarning("Load a class roster before saving.");
             return;
         }
         Map<Integer, String> statusByEnrollment = new HashMap<>();
         for (int r = 0; r < model.getRowCount(); r++) {
-            int enrollmentId = (Integer) model.getValueAt(r, 0);
-            String status = String.valueOf(model.getValueAt(r, 3));
+            int enrollmentId = ((Number) model.getValueAt(r, 0)).intValue();
+            String status = String.valueOf(model.getValueAt(r, 3)).toUpperCase();
             statusByEnrollment.put(enrollmentId, status);
         }
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Boolean, Void>() {
             private String error;
 
             @Override
-            protected Boolean doInBackground() throws Exception {
+            protected Boolean doInBackground() {
                 try {
                     service.save(currentCourseId, currentDate, statusByEnrollment);
                     return true;
@@ -288,41 +293,60 @@ public class AttendancePanel extends BasePanel implements MainFrame.Refreshable 
                 try {
                     if (get()) {
                         showSuccess("Attendance saved for " + currentDate + ".");
+                        updateSummary();
                     } else {
                         showError(error);
                     }
                 } catch (Exception ex) {
-                    showError("Save failed: " + ex.getMessage());
+                    showError("Save failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
+    }
+
+    private void updateSummary() {
+        int present = 0;
+        int late = 0;
+        int absent = 0;
+        for (int r = 0; r < model.getRowCount(); r++) {
+            String status = String.valueOf(model.getValueAt(r, 3)).toUpperCase();
+            switch (status) {
+                case "PRESENT" -> present++;
+                case "LATE" -> late++;
+                case "ABSENT" -> absent++;
+                default -> {
+                }
+            }
+        }
+        int total = model.getRowCount();
+        tableCard.setCount(total, "student");
+        if (total > 0) {
+            String summary = present + " present";
+            if (late > 0) {
+                summary += " \u00B7 " + late + " late";
+            }
+            summary += " \u00B7 " + absent + " absent";
+            tableCard.setSubtitle(summary);
+        }
+        tableCard.sync();
     }
 
     @Override
     public void refreshData() {
         loadCourses();
-        model.setRowCount(0);
+        if (model != null) {
+            model.setRowCount(0);
+        }
         currentCourseId = -1;
         currentDate = null;
+        if (tableCard != null) {
+            tableCard.setSubtitle("Choose a course and date, then load students.");
+            tableCard.setCount(0, "student");
+            tableCard.sync();
+        }
     }
 
-    protected void styleTable(JTable table) {
-        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(UIStyles.SELECTION);
-        table.setSelectionForeground(UIStyles.INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
-        table.getTableHeader().setBackground(UIStyles.PRIMARY);
-        table.getTableHeader().setForeground(UIStyles.INVERSE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(
-                BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
+    private String message(Exception ex) {
+        return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
     }
 }
-

@@ -1,47 +1,34 @@
 package ui.components;
 
-import java.awt.AlphaComposite;
+import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.RenderingHints;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.BorderFactory;
+import java.awt.LayoutManager;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import util.UIStyles;
 
 /**
- * A panel with rounded corners and optional elevation shadow.
- *
- * <p>Use {@link #setShadow(boolean)} to enable a soft drop shadow for
- * elevation (cards, modals, floating panels). Use {@link #setFill(Color)}
- * to set the background color. The panel paints its own background so that
- * rounded corners are respected regardless of the layout manager.
+ * A rounded surface with an optional hairline border and a soft bottom shadow.
+ * The building block for every card in the console.
  */
 public class RoundedPanel extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
-    private int radius = UIStyles.BORDER_RADIUS;
-    private boolean shadow = false;
-    private Color fill = UIStyles.CARD;
-    private Color stroke = UIStyles.LINE;
-    private float strokeWidth = 1f;
+    private int radius = UIStyles.RADIUS_LG;
+    private boolean shadow = true;
+    private Color fill = UIStyles.SURFACE;
+    private Color borderColor = UIStyles.LINE;
+    private boolean borderVisible = true;
 
     public RoundedPanel() {
-        setOpaque(false);
-        setBackground(UIStyles.CARD);
-        setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
+        this(new java.awt.BorderLayout());
     }
 
-    public RoundedPanel(int radius) {
-        this();
-        this.radius = radius;
+    public RoundedPanel(LayoutManager layout) {
+        super(layout);
+        setOpaque(false);
     }
 
     public void setRadius(int radius) {
@@ -59,52 +46,44 @@ public class RoundedPanel extends JPanel {
         repaint();
     }
 
-    public void setStroke(Color stroke, float width) {
-        this.stroke = stroke;
-        this.strokeWidth = width;
+    public void setBorderColor(Color borderColor) {
+        this.borderColor = borderColor;
+        repaint();
+    }
+
+    public void setBorderVisible(boolean visible) {
+        this.borderVisible = visible;
         repaint();
     }
 
     @Override
     protected void paintComponent(Graphics g) {
         Graphics2D g2 = (Graphics2D) g.create();
-        UIStyles.applyQualityHints(g2);
+        try {
+            UIStyles.applyQualityHints(g2);
+            int w = getWidth();
+            int h = getHeight();
+            int r = Math.min(radius, Math.min(w, h));
 
-        int w = getWidth();
-        int h = getHeight();
-        Insets insets = getInsets();
+            if (shadow) {
+                // Two very soft offset layers instead of a hard drop shadow.
+                g2.setColor(new Color(20, 32, 25, 10));
+                g2.fillRoundRect(1, 2, w - 2, h - 2, r, r);
+                g2.setColor(new Color(20, 32, 25, 8));
+                g2.fillRoundRect(0, 1, w - 1, h - 2, r, r);
+            }
 
-        // Paint shadow first (behind the panel)
-        if (shadow) {
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.12f));
-            g2.setColor(UIStyles.SHADOW);
-            g2.fillRoundRect(insets.left + 4, insets.top + 4,
-                    w - insets.left - insets.right - 8, h - insets.top - insets.bottom - 8,
-                    radius, radius);
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, w - 1, h - 2, r, r);
+
+            if (borderVisible) {
+                g2.setColor(borderColor);
+                g2.setStroke(new BasicStroke(1f));
+                g2.drawRoundRect(0, 0, w - 1, h - 2, r, r);
+            }
+        } finally {
+            g2.dispose();
         }
-
-        // Paint background fill
-        g2.setColor(fill);
-        g2.fillRoundRect(insets.left, insets.top,
-                w - insets.left - insets.right, h - insets.top - insets.bottom,
-                radius, radius);
-
-        // Paint stroke/border
-        if (stroke != null && strokeWidth > 0) {
-            g2.setColor(stroke);
-            g2.setStroke(new java.awt.BasicStroke(strokeWidth));
-            g2.drawRoundRect(insets.left, insets.top,
-                    w - insets.left - insets.right - 1, h - insets.top - insets.bottom - 1,
-                    radius, radius);
-        }
-
-        g2.dispose();
         super.paintComponent(g);
-    }
-
-    @Override
-    public boolean isOpaque() {
-        return false;
     }
 }

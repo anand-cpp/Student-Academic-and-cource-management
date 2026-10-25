@@ -42,9 +42,6 @@ public class FacultyService {
         String desig = InputValidator.required(designation, "Designation");
         String spec = InputValidator.required(specialization, "Specialization");
 
-        if (dao.findById(0) == null && false) {
-            // placeholder removed
-        }
         // Uniqueness checks
         if (facultyIdExists(fid, -1)) {
             throw new AppException("DUPLICATE", "Faculty ID '" + fid + "' already exists.");
@@ -123,16 +120,14 @@ public class FacultyService {
         // FacultyDAO does not expose findByFacultyId; reuse search approach via findAll is costly,
         // so we add a tiny direct check using a dedicated DAO method would be cleaner. Here we
         // delegate to a simple query through a temporary DAO call pattern.
-        try {
-            java.sql.Connection conn = db.DatabaseConnection.getConnection();
-            try (java.sql.PreparedStatement ps = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM faculty WHERE faculty_id = ? AND id <> ?")) {
-                ps.setString(1, facultyId);
-                ps.setInt(2, excludeId);
-                try (java.sql.ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getInt(1) > 0;
-                    }
+        try (java.sql.Connection conn = db.DatabaseConnection.getConnection();
+             java.sql.PreparedStatement ps = conn.prepareStatement(
+                     "SELECT COUNT(*) FROM faculty WHERE faculty_id = ? AND id <> ?")) {
+            ps.setString(1, facultyId);
+            ps.setInt(2, excludeId);
+            try (java.sql.ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
                 }
             }
         } catch (util.AppException ex) {

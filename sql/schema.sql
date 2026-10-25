@@ -3,7 +3,11 @@
 -- MySQL schema initialization script
 -- Database: student_academic_management
 -- =============================================================================
--- Run this script once to create the database and all required tables.
+-- Run this script to create the database and all required tables.
+-- Safe to re-run: existing tables and data are preserved.
+-- To reset the database, drop it first:
+--   DROP DATABASE student_academic_management;
+--
 -- Example (MySQL client):
 --   mysql -u root -p < sql/schema.sql
 --
@@ -15,8 +19,7 @@
 --   by the application, not by MySQL.
 -- =============================================================================
 
-DROP DATABASE IF EXISTS student_academic_management;
-CREATE DATABASE student_academic_management
+CREATE DATABASE IF NOT EXISTS student_academic_management
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 USE student_academic_management;
@@ -24,7 +27,7 @@ USE student_academic_management;
 -- -----------------------------------------------------------------------------
 -- 1. students
 -- -----------------------------------------------------------------------------
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(20) NOT NULL UNIQUE COMMENT 'Application-generated business code, e.g. STU0001',
     roll_number VARCHAR(20) NOT NULL UNIQUE COMMENT 'Unique roll number',
@@ -45,7 +48,7 @@ CREATE TABLE students (
 -- -----------------------------------------------------------------------------
 -- 2. faculty
 -- -----------------------------------------------------------------------------
-CREATE TABLE faculty (
+CREATE TABLE IF NOT EXISTS faculty (
     id INT AUTO_INCREMENT PRIMARY KEY,
     faculty_id VARCHAR(20) NOT NULL UNIQUE COMMENT 'Application-generated business code, e.g. FAC0001',
     employee_id VARCHAR(20) NOT NULL UNIQUE COMMENT 'Unique employee id',
@@ -64,7 +67,7 @@ CREATE TABLE faculty (
 -- -----------------------------------------------------------------------------
 -- 3. courses
 -- -----------------------------------------------------------------------------
-CREATE TABLE courses (
+CREATE TABLE IF NOT EXISTS courses (
     id INT AUTO_INCREMENT PRIMARY KEY,
     course_code VARCHAR(20) NOT NULL UNIQUE COMMENT 'Unique course code, e.g. CS101',
     course_name VARCHAR(150) NOT NULL,
@@ -88,7 +91,7 @@ CREATE TABLE courses (
 -- -----------------------------------------------------------------------------
 -- 4. enrollments
 -- -----------------------------------------------------------------------------
-CREATE TABLE enrollments (
+CREATE TABLE IF NOT EXISTS enrollments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL COMMENT 'FK to students.id',
     course_id INT NOT NULL COMMENT 'FK to courses.id',
@@ -111,7 +114,7 @@ CREATE TABLE enrollments (
 --   Late counts as attended (student was in the session). Only Absent reduces %.
 --   Future dates are never stored as absences.
 -- -----------------------------------------------------------------------------
-CREATE TABLE attendance (
+CREATE TABLE IF NOT EXISTS attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,
     enrollment_id INT NOT NULL COMMENT 'FK to enrollments.id',
     class_date DATE NOT NULL,
@@ -131,7 +134,7 @@ CREATE TABLE attendance (
 --   A: 90-100% | B: 80-89.99% | C: 70-79.99% | D: 60-69.99% |
 --   E: 50-59.99% | F: below 50%
 -- -----------------------------------------------------------------------------
-CREATE TABLE results (
+CREATE TABLE IF NOT EXISTS results (
     id INT AUTO_INCREMENT PRIMARY KEY,
     enrollment_id INT NOT NULL UNIQUE COMMENT 'FK to enrollments.id; one final result per enrollment',
     marks_obtained DECIMAL(6,2) NOT NULL,

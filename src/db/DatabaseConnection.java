@@ -42,30 +42,24 @@ public class DatabaseConnection {
 
     private static final String PROPERTIES_FILE = "config/db.properties";
 
-    private static Connection connection = null;
-
     private DatabaseConnection() {
         // Utility class - not instantiable
     }
 
     /**
-     * Obtain a valid, open connection. Reuses the existing connection when it is
-     * still valid; otherwise establishes a new one.
+     * Open a new connection. Callers own the connection and must close it.
+     *
+     * <p>Each call returns an independent connection so background
+     * {@code SwingWorker} tasks can query the database concurrently without
+     * sharing a non-thread-safe JDBC connection. DAOs close connections with
+     * try-with-resources; services close them after committing a transaction.
      *
      * @return an open JDBC connection
      * @throws AppException if the driver cannot be loaded or the server cannot
      *                      be reached
      */
     public static Connection getConnection() throws AppException {
-        try {
-            if (connection != null && connection.isValid(2)) {
-                return connection;
-            }
-        } catch (SQLException ignored) {
-            // Fall through to create a new connection
-        }
-        connection = openNewConnection();
-        return connection;
+        return openNewConnection();
     }
 
     private static Connection openNewConnection() throws AppException {
@@ -124,14 +118,8 @@ public class DatabaseConnection {
         return props;
     }
 
-    /** Close the shared connection (used on application shutdown). */
+    /** Compatibility hook. Connections are now owned by their callers. */
     public static void close() {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException ignored) {
-            }
-            connection = null;
-        }
+        // No shared connection remains to close.
     }
 }

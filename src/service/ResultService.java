@@ -68,6 +68,10 @@ public class ResultService {
         String grade = gradeService.calculateGrade(percentage);
 
         Result result = new Result();
+        Result existing = dao.findByEnrollment(enrollmentId);
+        if (existing != null) {
+            result.setId(existing.getId());
+        }
         result.setEnrollmentId(enrollmentId);
         result.setMarksObtained(marks.setScale(2, BigDecimal.ROUND_HALF_UP));
         result.setPercentage(percentage);
@@ -100,6 +104,10 @@ public class ResultService {
             if (conn != null) {
                 try {
                     conn.setAutoCommit(true);
+                } catch (Exception ignored) {
+                }
+                try {
+                    conn.close();
                 } catch (Exception ignored) {
                 }
             }

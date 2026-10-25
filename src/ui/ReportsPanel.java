@@ -1,19 +1,14 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
+import java.awt.CardLayout;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.GridLayout;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
@@ -22,35 +17,57 @@ import dao.FacultyDAO;
 import model.Course;
 import model.Faculty;
 import service.ReportService;
-import util.AppException;
+import ui.components.AppComboBox;
+import ui.components.AppIcon;
+import ui.components.DataCard;
 import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
+import ui.components.SideTabs;
 import ui.components.SectionHeader;
+import ui.components.StatCard;
+import ui.components.TableCard;
+import util.AppException;
 import util.UIStyles;
 
 /**
- * Reports panel. All data is retrieved from MySQL; nothing is hardcoded.
+ * Analysis workspace.
  *
- * <p>Reports:<br>
- *   1. Student directory<br>
- *   2. Students enrolled in a selected course<br>
- *   3. Courses assigned to a selected faculty member<br>
- *   4. Course-wise attendance summary<br>
- *   5. Course-wise academic results<br>
- *   6. Overall academic performance (pass/fail/average)
+ * <p>Six report views share a vertical report library on the left and a single
+ * card stage on the right:
+ * <ol>
+ *   <li>Student directory</li>
+ *   <li>Students enrolled in a course</li>
+ *   <li>Courses assigned to a faculty member</li>
+ *   <li>Course-wise attendance summary</li>
+ *   <li>Course-wise academic results</li>
+ *   <li>Overall academic performance</li>
+ * </ol>
+ * All rows come from MySQL via {@link ReportService}.
  */
 public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
 
     private static final long serialVersionUID = 1L;
 
+    private static final String[] REPORT_NAMES = {
+        "Student directory", "Students in a course", "Courses by faculty",
+        "Course attendance", "Course results", "Overall performance"
+    };
+
     private final ReportService report = new ReportService();
 
-    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboCourses;
-    private javax.swing.JComboBox<EnrollmentPanel.ComboItem> cboFaculty;
+    private final CardLayout stageLayout = new CardLayout();
+    private final JPanel stage = new JPanel(stageLayout);
+
+    private AppComboBox<EnrollmentPanel.ComboItem> cboStudentsCourse;
+    private AppComboBox<EnrollmentPanel.ComboItem> cboFaculty;
+    private AppComboBox<EnrollmentPanel.ComboItem> cboAttendanceCourse;
+    private AppComboBox<EnrollmentPanel.ComboItem> cboResultsCourse;
+
     private JTable dirTable, studentsInCourseTable, coursesByFacultyTable,
-            attendanceSummaryTable, courseResultsTable;
-    private ui.components.RoundedPanel perfTotalBox, perfPassBox, perfFailBox, perfAvgBox;
-    private javax.swing.JLabel perfTotalVal, perfPassVal, perfFailVal, perfAvgVal;
+            attendanceSummaryTable, courseResultsTable, allResultsTable;
+    private TableCard dirCard, studentsCard, facultyCard, attendanceCard,
+            resultsCard, allResultsCard;
+
+    private StatCard cardTotal, cardPass, cardFail, cardAverage;
 
     public ReportsPanel(MainFrame main) {
         super(main);
@@ -59,46 +76,196 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
     }
 
     private void buildUI() {
-        setLayout(new BorderLayout(0, 0));
+        SectionHeader head = header("Module 08 \u00B7 Analysis", "Reports",
+                "Six views of the register, computed live from the database.");
+        add(head, BorderLayout.NORTH);
 
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Student Directory", buildStudentDirectoryTab());
-        tabs.addTab("Students in Course", buildStudentsInCourseTab());
-        tabs.addTab("Courses by Faculty", buildCoursesByFacultyTab());
-        tabs.addTab("Course Attendance", buildCourseAttendanceTab());
-        tabs.addTab("Course Results", buildCourseResultsTab());
-        tabs.addTab("Overall Performance", buildOverallPerformanceTab());
-        add(tabs, BorderLayout.CENTER);
+        JPanel body = pageBody();
+
+        SideTabs tabs = new SideTabs(REPORT_NAMES);
+        DataCard nav = card("Report library", "Choose a view to inspect.");
+        nav.setBody(tabs);
+
+        JPanel navWrap = new JPanel(new BorderLayout());
+        navWrap.setOpaque(false);
+        navWrap.setPreferredSize(new Dimension(252, 0));
+        navWrap.add(nav, BorderLayout.NORTH);
+
+        stage.setOpaque(false);
+        stage.add(buildStudentDirectoryPane(), "0");
+        stage.add(buildStudentsInCoursePane(), "1");
+        stage.add(buildCoursesByFacultyPane(), "2");
+        stage.add(buildCourseAttendancePane(), "3");
+        stage.add(buildCourseResultsPane(), "4");
+        stage.add(buildOverallPane(), "5");
+
+        tabs.addSelectionListener(() -> stageLayout.show(stage, String.valueOf(tabs.getSelectedIndex())));
+
+        body.add(navWrap, BorderLayout.WEST);
+        body.add(stage, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
     }
 
-    /* ---------- Tab 1: Student directory ---------- */
+    /* ---------------------------------------------------------------
+       Panes
+       --------------------------------------------------------------- */
 
-    private JPanel buildStudentDirectoryTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
+    private JPanel pane() {
+        JPanel p = new JPanel(new BorderLayout());
+        p.setOpaque(false);
+        return p;
+    }
 
-        RoundedButton refresh = new RoundedButton("Refresh");
-        refresh.applyPrimary();
+    private JPanel buildStudentDirectoryPane() {
+        dirTable = buildTable(new Object[0][0],
+                new String[]{"Student ID", "Name", "Email", "Department", "Sem."});
+        dirCard = tableCard("Student directory", "Everyone currently on the register.",
+                dirTable, "No students on file",
+                "The directory will fill as soon as students are added.");
+        RoundedButton refresh = new RoundedButton("Refresh", AppIcon.Glyph.REFRESH);
+        refresh.applyOutline();
         refresh.addActionListener(e -> loadStudentDirectory());
+        dirCard.getCard().addHeaderAction(refresh);
 
-        JPanel top = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        top.setOpaque(false);
-        top.add(refresh);
-        panel.add(top, BorderLayout.NORTH);
-
-        dirTable = new JTable();
-        JScrollPane scroll = new JScrollPane(dirTable);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(dirTable);
-        panel.add(scroll, BorderLayout.CENTER);
-        loadStudentDirectory();
-        return panel;
+        JPanel pane = pane();
+        pane.add(dirCard, BorderLayout.CENTER);
+        return pane;
     }
+
+    private JPanel buildStudentsInCoursePane() {
+        studentsInCourseTable = buildTable(new Object[0][0],
+                new String[]{"Student ID", "Name", "Status", "Enrolled"});
+        studentsCard = tableCard("Students in a course", "Enrollments for the chosen course.",
+                studentsInCourseTable, "No enrollments for this course",
+                "Pick another course, or enroll students from the Enrollments module.");
+
+        cboStudentsCourse = new AppComboBox<>();
+        cboStudentsCourse.setPreferredSize(new Dimension(250, 34));
+        RoundedButton load = new RoundedButton("Load", AppIcon.Glyph.ARROW_RIGHT);
+        load.applyOutline();
+        load.addActionListener(e -> loadStudentsInCourse());
+        studentsCard.getCard().addHeaderAction(cboStudentsCourse);
+        studentsCard.getCard().addHeaderAction(load);
+
+        JPanel pane = pane();
+        pane.add(studentsCard, BorderLayout.CENTER);
+        return pane;
+    }
+
+    private JPanel buildCoursesByFacultyPane() {
+        coursesByFacultyTable = buildTable(new Object[0][0],
+                new String[]{"Course Code", "Course Name", "Department", "Credits"});
+        facultyCard = tableCard("Courses by faculty", "Assignments for the chosen faculty member.",
+                coursesByFacultyTable, "No courses assigned",
+                "Assign courses to this faculty member from the Courses module.");
+
+        cboFaculty = new AppComboBox<>();
+        cboFaculty.setPreferredSize(new Dimension(240, 34));
+        RoundedButton load = new RoundedButton("Load", AppIcon.Glyph.ARROW_RIGHT);
+        load.applyOutline();
+        load.addActionListener(e -> loadCoursesByFaculty());
+        facultyCard.getCard().addHeaderAction(cboFaculty);
+        facultyCard.getCard().addHeaderAction(load);
+
+        JPanel pane = pane();
+        pane.add(facultyCard, BorderLayout.CENTER);
+        return pane;
+    }
+
+    private JPanel buildCourseAttendancePane() {
+        attendanceSummaryTable = buildTable(new Object[0][0],
+                new String[]{"Student ID", "Name", "Present", "Late", "Absent", "Total", "Percentage"});
+        attendanceCard = tableCard("Course attendance", "Present, late and absent totals per student.",
+                attendanceSummaryTable, "No attendance for this course",
+                "Mark a class from the Attendance module, then return to this report.");
+
+        cboAttendanceCourse = new AppComboBox<>();
+        cboAttendanceCourse.setPreferredSize(new Dimension(250, 34));
+        RoundedButton load = new RoundedButton("Load", AppIcon.Glyph.ARROW_RIGHT);
+        load.applyOutline();
+        load.addActionListener(e -> loadCourseAttendance());
+        attendanceCard.getCard().addHeaderAction(cboAttendanceCourse);
+        attendanceCard.getCard().addHeaderAction(load);
+
+        JPanel pane = pane();
+        pane.add(attendanceCard, BorderLayout.CENTER);
+        return pane;
+    }
+
+    private JPanel buildCourseResultsPane() {
+        courseResultsTable = buildTable(new Object[0][0],
+                new String[]{"Student ID", "Name", "Marks", "Max",
+                    "Pass", "Percent", "Grade"});
+        resultsCard = tableCard("Course results", "Marks, percentages and grades for the chosen course.",
+                courseResultsTable, "No results for this course",
+                "Record results from the Results module, then return to this report.");
+
+        cboResultsCourse = new AppComboBox<>();
+        cboResultsCourse.setPreferredSize(new Dimension(250, 34));
+        RoundedButton load = new RoundedButton("Load", AppIcon.Glyph.ARROW_RIGHT);
+        load.applyOutline();
+        load.addActionListener(e -> loadCourseResults());
+        resultsCard.getCard().addHeaderAction(cboResultsCourse);
+        resultsCard.getCard().addHeaderAction(load);
+
+        JPanel pane = pane();
+        pane.add(resultsCard, BorderLayout.CENTER);
+        return pane;
+    }
+
+    private JPanel buildOverallPane() {
+        cardTotal = new StatCard("Results", "0", UIStyles.PRIMARY,
+                new AppIcon(AppIcon.Glyph.RESULTS, 17, UIStyles.PRIMARY));
+        cardTotal.setCaption("recorded in total");
+
+        cardPass = new StatCard("Passed", "0", UIStyles.SUCCESS,
+                new AppIcon(AppIcon.Glyph.CHECK, 17, UIStyles.SUCCESS));
+        cardPass.setCaption("grades A\u2013D");
+
+        cardFail = new StatCard("Failed", "0", UIStyles.DANGER,
+                new AppIcon(AppIcon.Glyph.WARNING, 17, UIStyles.DANGER));
+        cardFail.setCaption("grade F");
+
+        cardAverage = new StatCard("Average", "0.00%", UIStyles.INFO,
+                new AppIcon(AppIcon.Glyph.SPARK, 17, UIStyles.INFO));
+        cardAverage.setCaption("mean percentage");
+        cardAverage.setProgress(0);
+
+        JPanel stats = new JPanel(new GridLayout(1, 4, 14, 0));
+        stats.setOpaque(false);
+        stats.setPreferredSize(new Dimension(0, 126));
+        stats.add(cardTotal);
+        stats.add(cardPass);
+        stats.add(cardFail);
+        stats.add(cardAverage);
+
+        allResultsTable = buildTable(new Object[0][0],
+                new String[]{"Student ID", "Student", "Course",
+                    "Marks", "Percentage", "Grade"});
+        allResultsCard = tableCard("All recorded results", "Every result in the institution.",
+                allResultsTable, "No results recorded",
+                "Results entered in the Results module will appear here.");
+        RoundedButton refresh = new RoundedButton("Refresh", AppIcon.Glyph.REFRESH);
+        refresh.applyOutline();
+        refresh.addActionListener(e -> loadOverallPerformance());
+        allResultsCard.getCard().addHeaderAction(refresh);
+
+        JPanel pane = pane();
+        pane.add(stats, BorderLayout.NORTH);
+        JPanel tableWrap = new JPanel(new BorderLayout());
+        tableWrap.setOpaque(false);
+        tableWrap.setBorder(new EmptyBorder(16, 0, 0, 0));
+        tableWrap.add(allResultsCard, BorderLayout.CENTER);
+        pane.add(tableWrap, BorderLayout.CENTER);
+        return pane;
+    }
+
+    /* ---------------------------------------------------------------
+       Loaders
+       --------------------------------------------------------------- */
 
     private void loadStudentDirectory() {
-        SwingWorker<List<Map<String, Object>>, Void> worker =
-                new SwingWorker<List<Map<String, Object>>, Void>() {
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.studentDirectory();
@@ -108,79 +275,33 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     List<Map<String, Object>> rows = get();
-                    Object[][] data = new Object[rows.size()][6];
+                    Object[][] data = new Object[rows.size()][5];
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
-                        data[i] = new Object[] {
-                            r.get("studentId"), r.get("rollNumber"), r.get("fullName"),
+                        data[i] = new Object[]{
+                            r.get("studentId"), r.get("fullName"),
                             r.get("email"), r.get("department"), r.get("semester")
                         };
                     }
-                    dirTable.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "Student ID", "Roll No.", "Name", "Email", "Department", "Semester" }));
-                    styleTable(dirTable);
+                    replaceTableData(dirTable, data,
+                            new String[]{"Student ID", "Name", "Email", "Department", "Sem."});
+                    setColumnWidths(dirTable, 90, 112, 195, 150, 66);
+                    dirCard.setCount(rows.size(), "student");
+                    dirCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
-    }
-
-    /* ---------- Tab 2: Students in a course ---------- */
-
-    private JPanel buildStudentsInCourseTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        RoundedPanel top = new RoundedPanel();
-        top.setRadius(8);
-        top.setShadow(false);
-        top.setFill(UIStyles.CARD_HOVER);
-        top.setLayout(new GridBagLayout());
-        top.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.anchor = GridBagConstraints.WEST;
-        cboCourses = new javax.swing.JComboBox<>();
-        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY);
-        lbl.setForeground(UIStyles.INK);
-        top.add(lbl, g);
-        g.gridx = 1;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        top.add(cboCourses, g);
-        g.gridx = 2;
-        g.fill = GridBagConstraints.NONE;
-        g.weightx = 0;
-        RoundedButton load = new RoundedButton("Load");
-        load.applyPrimary();
-        load.addActionListener(e -> loadStudentsInCourse());
-        top.add(load, g);
-
-        panel.add(top, BorderLayout.NORTH);
-
-        studentsInCourseTable = new JTable();
-        JScrollPane scroll = new JScrollPane(studentsInCourseTable);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(studentsInCourseTable);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        loadCourses(cboCourses);
-        return panel;
+        }.execute();
     }
 
     private void loadStudentsInCourse() {
-        EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboCourses.getSelectedItem();
+        EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboStudentsCourse.getSelectedItem();
         if (item == null) {
-            showWarning("Select a course.");
+            showWarning("Select a course first.");
             return;
         }
-        SwingWorker<List<Map<String, Object>>, Void> worker =
-                new SwingWorker<List<Map<String, Object>>, Void>() {
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.studentsInCourse(item.id);
@@ -190,78 +311,34 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     List<Map<String, Object>> rows = get();
-                    Object[][] data = new Object[rows.size()][3];
+                    Object[][] data = new Object[rows.size()][4];
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
-                        data[i] = new Object[] {
-                            r.get("enrollmentId"), r.get("studentId"), r.get("status")
+                        data[i] = new Object[]{
+                            r.get("studentCode"), r.get("studentName"),
+                            r.get("status"), r.get("enrollmentDate")
                         };
                     }
-                    studentsInCourseTable.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "Enrollment ID", "Student ID", "Status" }));
-                    styleTable(studentsInCourseTable);
+                    replaceTableData(studentsInCourseTable, data,
+                            new String[]{"Student ID", "Name", "Status", "Enrolled"});
+                    setColumnWidths(studentsInCourseTable, 95, 185, 85, 95);
+                    studentsCard.setCount(rows.size(), "enrollment");
+                    studentsCard.setSubtitle(item.label);
+                    studentsCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
-    }
-
-    /* ---------- Tab 3: Courses by faculty ---------- */
-
-    private JPanel buildCoursesByFacultyTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        RoundedPanel top = new RoundedPanel();
-        top.setRadius(8);
-        top.setShadow(false);
-        top.setFill(UIStyles.CARD_HOVER);
-        top.setLayout(new GridBagLayout());
-        top.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.anchor = GridBagConstraints.WEST;
-        cboFaculty = new javax.swing.JComboBox<>();
-        javax.swing.JLabel lbl = new javax.swing.JLabel("Select faculty:");
-        lbl.setFont(UIStyles.BODY);
-        lbl.setForeground(UIStyles.INK);
-        top.add(lbl, g);
-        g.gridx = 1;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        top.add(cboFaculty, g);
-        g.gridx = 2;
-        g.fill = GridBagConstraints.NONE;
-        g.weightx = 0;
-        RoundedButton load = new RoundedButton("Load");
-        load.applyPrimary();
-        load.addActionListener(e -> loadCoursesByFaculty());
-        top.add(load, g);
-
-        panel.add(top, BorderLayout.NORTH);
-
-        coursesByFacultyTable = new JTable();
-        JScrollPane scroll = new JScrollPane(coursesByFacultyTable);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(coursesByFacultyTable);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        loadFaculty(cboFaculty);
-        return panel;
+        }.execute();
     }
 
     private void loadCoursesByFaculty() {
         EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboFaculty.getSelectedItem();
         if (item == null) {
-            showWarning("Select a faculty member.");
+            showWarning("Select a faculty member first.");
             return;
         }
-        SwingWorker<List<Map<String, Object>>, Void> worker =
-                new SwingWorker<List<Map<String, Object>>, Void>() {
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return report.coursesByFaculty(item.id);
@@ -274,79 +351,34 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     Object[][] data = new Object[rows.size()][4];
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
-                        data[i] = new Object[] {
+                        data[i] = new Object[]{
                             r.get("courseCode"), r.get("courseName"),
                             r.get("department"), r.get("credits")
                         };
                     }
-                    coursesByFacultyTable.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "Course Code", "Course Name", "Department", "Credits" }));
-                    styleTable(coursesByFacultyTable);
+                    replaceTableData(coursesByFacultyTable, data,
+                            new String[]{"Course Code", "Course Name", "Department", "Credits"});
+                    setColumnWidths(coursesByFacultyTable, 95, 200, 130, 65);
+                    facultyCard.setCount(rows.size(), "course");
+                    facultyCard.setSubtitle(item.label);
+                    facultyCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    /* ---------- Tab 4: Course attendance summary ---------- */
-
-    private JPanel buildCourseAttendanceTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        RoundedPanel top = new RoundedPanel();
-        top.setRadius(8);
-        top.setShadow(false);
-        top.setFill(UIStyles.CARD_HOVER);
-        top.setLayout(new GridBagLayout());
-        top.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.anchor = GridBagConstraints.WEST;
-        javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo = new javax.swing.JComboBox<>();
-        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY);
-        lbl.setForeground(UIStyles.INK);
-        top.add(lbl, g);
-        g.gridx = 1;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        top.add(cbo, g);
-        g.gridx = 2;
-        g.fill = GridBagConstraints.NONE;
-        g.weightx = 0;
-        RoundedButton load = new RoundedButton("Load");
-        load.applyPrimary();
-        load.addActionListener(e -> {
-            EnrollmentPanel.ComboItem it = (EnrollmentPanel.ComboItem) cbo.getSelectedItem();
-            if (it != null) {
-                loadCourseAttendance(it.id);
-            }
-        });
-        top.add(load, g);
-
-        panel.add(top, BorderLayout.NORTH);
-
-        attendanceSummaryTable = new JTable();
-        JScrollPane scroll = new JScrollPane(attendanceSummaryTable);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(attendanceSummaryTable);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        loadCourses(cbo);
-        return panel;
-    }
-
-    private void loadCourseAttendance(int courseId) {
-        SwingWorker<List<Map<String, Object>>, Void> worker =
-                new SwingWorker<List<Map<String, Object>>, Void>() {
+    private void loadCourseAttendance() {
+        EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboAttendanceCourse.getSelectedItem();
+        if (item == null) {
+            showWarning("Select a course first.");
+            return;
+        }
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
-                return report.courseAttendanceSummary(courseId);
+                return report.courseAttendanceSummary(item.id);
             }
 
             @Override
@@ -356,80 +388,36 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     Object[][] data = new Object[rows.size()][7];
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
-                        data[i] = new Object[] {
+                        data[i] = new Object[]{
                             r.get("studentCode"), r.get("studentName"), r.get("present"),
                             r.get("late"), r.get("absent"), r.get("total"),
                             r.get("percentage") + "%"
                         };
                     }
-                    attendanceSummaryTable.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "Student ID", "Name", "Present", "Late", "Absent", "Total", "% Attendance" }));
-                    styleTable(attendanceSummaryTable);
+                    replaceTableData(attendanceSummaryTable, data,
+                            new String[]{"Student ID", "Name", "Present", "Late", "Absent",
+                                "Total", "Percentage"});
+                    setColumnWidths(attendanceSummaryTable, 90, 135, 65, 52, 62, 55, 82);
+                    attendanceCard.setCount(rows.size(), "student");
+                    attendanceCard.setSubtitle(item.label);
+                    attendanceCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    /* ---------- Tab 5: Course results ---------- */
-
-    private JPanel buildCourseResultsTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        RoundedPanel top = new RoundedPanel();
-        top.setRadius(8);
-        top.setShadow(false);
-        top.setFill(UIStyles.CARD_HOVER);
-        top.setLayout(new GridBagLayout());
-        top.setBorder(new EmptyBorder(12, 12, 12, 12));
-
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 6, 6, 6);
-        g.anchor = GridBagConstraints.WEST;
-        javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo = new javax.swing.JComboBox<>();
-        javax.swing.JLabel lbl = new javax.swing.JLabel("Select course:");
-        lbl.setFont(UIStyles.BODY);
-        lbl.setForeground(UIStyles.INK);
-        top.add(lbl, g);
-        g.gridx = 1;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        top.add(cbo, g);
-        g.gridx = 2;
-        g.fill = GridBagConstraints.NONE;
-        g.weightx = 0;
-        RoundedButton load = new RoundedButton("Load");
-        load.applyPrimary();
-        load.addActionListener(e -> {
-            EnrollmentPanel.ComboItem it = (EnrollmentPanel.ComboItem) cbo.getSelectedItem();
-            if (it != null) {
-                loadCourseResults(it.id);
-            }
-        });
-        top.add(load, g);
-
-        panel.add(top, BorderLayout.NORTH);
-
-        courseResultsTable = new JTable();
-        JScrollPane scroll = new JScrollPane(courseResultsTable);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(courseResultsTable);
-        panel.add(scroll, BorderLayout.CENTER);
-
-        loadCourses(cbo);
-        return panel;
-    }
-
-    private void loadCourseResults(int courseId) {
-        SwingWorker<List<Map<String, Object>>, Void> worker =
-                new SwingWorker<List<Map<String, Object>>, Void>() {
+    private void loadCourseResults() {
+        EnrollmentPanel.ComboItem item = (EnrollmentPanel.ComboItem) cboResultsCourse.getSelectedItem();
+        if (item == null) {
+            showWarning("Select a course first.");
+            return;
+        }
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
-                return report.courseResults(courseId);
+                return report.courseResults(item.id);
             }
 
             @Override
@@ -440,107 +428,28 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
                         BigDecimal pct = (BigDecimal) r.get("percentage");
-                        BigDecimal marks = (BigDecimal) r.get("marksObtained");
-                        BigDecimal max = (BigDecimal) r.get("maximumMarks");
-                        BigDecimal pass = (BigDecimal) r.get("passingMarks");
-                        data[i] = new Object[] {
-                            r.get("studentCode"), r.get("studentName"), marks,
-                            max, pass, pct == null ? "-" : pct + "%", r.get("grade")
+                        data[i] = new Object[]{
+                            r.get("studentCode"), r.get("studentName"), r.get("marksObtained"),
+                            r.get("maximumMarks"), r.get("passingMarks"),
+                            pct == null ? "\u2014" : pct + "%", r.get("grade")
                         };
                     }
-                    courseResultsTable.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "Student ID", "Name", "Marks Obtained",
-                                "Max Marks", "Pass Marks", "Percentage", "Grade" }));
-                    styleTable(courseResultsTable);
+                    replaceTableData(courseResultsTable, data,
+                            new String[]{"Student ID", "Name", "Marks", "Max",
+                                "Pass", "Percent", "Grade"});
+                    setColumnWidths(courseResultsTable, 95, 180, 65, 55, 55, 80, 55);
+                    resultsCard.setCount(rows.size(), "result");
+                    resultsCard.setSubtitle(item.label);
+                    resultsCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
-    }
-
-    /* ---------- Tab 6: Overall performance ---------- */
-
-    private JPanel buildOverallPerformanceTab() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        RoundedPanel stats = new RoundedPanel();
-        stats.setRadius(12);
-        stats.setShadow(false);
-        stats.setFill(UIStyles.CARD);
-        stats.setLayout(new java.awt.GridLayout(1, 4, 12, 0));
-        stats.setBorder(new EmptyBorder(16, 16, 16, 16));
-
-        perfTotalBox = statBox("Total Results", "0", UIStyles.PRIMARY);
-        perfPassBox = statBox("Passed", "0", UIStyles.SUCCESS);
-        perfFailBox = statBox("Failed", "0", UIStyles.DANGER);
-        perfAvgBox = statBox("Average %", "0.00", UIStyles.INFO);
-        perfTotalVal = findValueLabel(perfTotalBox);
-        perfPassVal = findValueLabel(perfPassBox);
-        perfFailVal = findValueLabel(perfFailBox);
-        perfAvgVal = findValueLabel(perfAvgBox);
-        stats.add(perfTotalBox);
-        stats.add(perfPassBox);
-        stats.add(perfFailBox);
-        stats.add(perfAvgBox);
-        panel.add(stats, BorderLayout.NORTH);
-
-        RoundedButton refresh = new RoundedButton("Refresh");
-        refresh.applyPrimary();
-        refresh.addActionListener(e -> loadOverallPerformance());
-
-        JPanel top = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
-        top.setOpaque(false);
-        top.add(refresh);
-        panel.add(top, BorderLayout.SOUTH);
-
-        loadOverallPerformance();
-        return panel;
-    }
-
-    private ui.components.RoundedPanel statBox(String label, String value, Color c) {
-        ui.components.RoundedPanel box = new ui.components.RoundedPanel();
-        box.setRadius(8);
-        box.setShadow(false);
-        box.setFill(UIStyles.CARD);
-        box.setLayout(new BorderLayout(8, 6));
-        box.setBorder(new EmptyBorder(14, 14, 14, 14));
-
-        javax.swing.JLabel val = new javax.swing.JLabel(value);
-        val.setFont(UIStyles.CARD_VALUE);
-        val.setForeground(c);
-
-        javax.swing.JLabel lab = new javax.swing.JLabel(label);
-        lab.setFont(UIStyles.CARD_LABEL);
-        lab.setForeground(UIStyles.MUTED);
-
-        box.add(val, BorderLayout.CENTER);
-        box.add(lab, BorderLayout.SOUTH);
-        return box;
-    }
-
-    private void setStat(javax.swing.JLabel label, String value) {
-        label.setText(value);
-    }
-
-    private javax.swing.JLabel findValueLabel(javax.swing.JPanel panel) {
-        java.awt.Component[] comps = panel.getComponents();
-        for (java.awt.Component c : comps) {
-            if (c instanceof javax.swing.JLabel) {
-                javax.swing.JLabel l = (javax.swing.JLabel) c;
-                if (l.getFont().getSize() > 20) {
-                    return l;
-                }
-            }
-        }
-        return null;
+        }.execute();
     }
 
     private void loadOverallPerformance() {
-        SwingWorker<PerfStats, Void> worker = new SwingWorker<PerfStats, Void>() {
+        new SwingWorker<PerfStats, Void>() {
             @Override
             protected PerfStats doInBackground() throws Exception {
                 PerfStats s = new PerfStats();
@@ -548,22 +457,31 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
                 s.total = rows.size();
                 int pass = 0;
                 double sum = 0;
-                int withGrade = 0;
-                for (Map<String, Object> r : rows) {
+                int withPercentage = 0;
+
+                Object[][] data = new Object[rows.size()][6];
+                for (int i = 0; i < rows.size(); i++) {
+                    Map<String, Object> r = rows.get(i);
                     BigDecimal pct = (BigDecimal) r.get("percentage");
+                    data[i] = new Object[]{
+                        r.get("studentCode"), r.get("studentName"),
+                        r.get("courseName"), r.get("marksObtained"),
+                        pct == null ? "\u2014" : pct + "%", r.get("grade")
+                    };
                     if (pct != null) {
                         sum += pct.doubleValue();
-                        withGrade++;
+                        withPercentage++;
                         String grade = (String) r.get("grade");
-                        if ("A".equals(grade) || "B".equals(grade) || "C".equals(grade)
-                                || "D".equals(grade)) {
+                        if ("A".equals(grade) || "B".equals(grade)
+                                || "C".equals(grade) || "D".equals(grade)) {
                             pass++;
                         }
                     }
                 }
                 s.pass = pass;
                 s.fail = s.total - pass;
-                s.avg = (withGrade == 0) ? 0.0 : sum / withGrade;
+                s.average = withPercentage == 0 ? 0.0 : sum / withPercentage;
+                s.data = data;
                 return s;
             }
 
@@ -571,30 +489,37 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     PerfStats s = get();
-                    setStat(perfTotalVal, String.valueOf(s.total));
-                    setStat(perfPassVal, String.valueOf(s.pass));
-                    setStat(perfFailVal, String.valueOf(s.fail));
-                    setStat(perfAvgVal, String.format("%.2f", s.avg));
+                    cardTotal.setValue(String.valueOf(s.total));
+                    cardPass.setValue(String.valueOf(s.pass));
+                    cardFail.setValue(String.valueOf(s.fail));
+                    cardAverage.setValue(String.format("%.2f%%", s.average));
+                    cardAverage.setProgress(s.average);
+
+                    replaceTableData(allResultsTable, s.data,
+                            new String[]{"Student ID", "Student", "Course",
+                                "Marks", "Percentage", "Grade"});
+                    setColumnWidths(allResultsTable, 88, 120, 160, 60, 85, 55);
+                    allResultsCard.setCount(s.total, "result");
+                    allResultsCard.sync();
                 } catch (Exception ex) {
-                    showError("Report failed: " + ex.getMessage());
+                    showError("Report failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    /* ---------- Combo loaders ---------- */
+    /* ---------------------------------------------------------------
+       Combo loaders
+       --------------------------------------------------------------- */
 
-    private void loadCourses(javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo) {
-        SwingWorker<List<EnrollmentPanel.ComboItem>, Void> worker =
-                new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
+    private void loadCourses(AppComboBox<EnrollmentPanel.ComboItem> combo, Runnable afterLoad) {
+        new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
             @Override
             protected List<EnrollmentPanel.ComboItem> doInBackground() throws Exception {
                 List<EnrollmentPanel.ComboItem> list = new ArrayList<>();
-                CourseDAO dao = new CourseDAO();
-                for (Course c : dao.findAll()) {
+                for (Course c : new CourseDAO().findAll()) {
                     list.add(new EnrollmentPanel.ComboItem(c.getId(),
-                            c.getCourseCode() + " - " + c.getCourseName()));
+                            c.getCourseCode() + " \u00B7 " + c.getCourseName()));
                 }
                 return list;
             }
@@ -603,26 +528,38 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     List<EnrollmentPanel.ComboItem> list = get();
-                    cbo.setModel(new javax.swing.DefaultComboBoxModel<>(
+                    EnrollmentPanel.ComboItem previous =
+                            (EnrollmentPanel.ComboItem) combo.getSelectedItem();
+                    combo.setModel(new javax.swing.DefaultComboBoxModel<>(
                             list.toArray(new EnrollmentPanel.ComboItem[0])));
+                    boolean restored = false;
+                    if (previous != null) {
+                        for (int i = 0; i < combo.getItemCount(); i++) {
+                            if (combo.getItemAt(i).id == previous.id) {
+                                combo.setSelectedIndex(i);
+                                restored = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (afterLoad != null && (restored || !list.isEmpty())) {
+                        afterLoad.run();
+                    }
                 } catch (Exception ex) {
-                    showError("Failed to load courses: " + ex.getMessage());
+                    showError("Failed to load courses: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    private void loadFaculty(javax.swing.JComboBox<EnrollmentPanel.ComboItem> cbo) {
-        SwingWorker<List<EnrollmentPanel.ComboItem>, Void> worker =
-                new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
+    private void loadFaculty(AppComboBox<EnrollmentPanel.ComboItem> combo) {
+        new SwingWorker<List<EnrollmentPanel.ComboItem>, Void>() {
             @Override
             protected List<EnrollmentPanel.ComboItem> doInBackground() throws Exception {
                 List<EnrollmentPanel.ComboItem> list = new ArrayList<>();
-                FacultyDAO dao = new FacultyDAO();
-                for (Faculty f : dao.findAll()) {
+                for (Faculty f : new FacultyDAO().findAll()) {
                     list.add(new EnrollmentPanel.ComboItem(f.getId(),
-                            f.getFacultyId() + " - " + f.getFullName()));
+                            f.getFacultyId() + " \u00B7 " + f.getFullName()));
                 }
                 return list;
             }
@@ -631,49 +568,45 @@ public class ReportsPanel extends BasePanel implements MainFrame.Refreshable {
             protected void done() {
                 try {
                     List<EnrollmentPanel.ComboItem> list = get();
-                    cbo.setModel(new javax.swing.DefaultComboBoxModel<>(
+                    EnrollmentPanel.ComboItem previous =
+                            (EnrollmentPanel.ComboItem) combo.getSelectedItem();
+                    combo.setModel(new javax.swing.DefaultComboBoxModel<>(
                             list.toArray(new EnrollmentPanel.ComboItem[0])));
+                    if (previous != null) {
+                        for (int i = 0; i < combo.getItemCount(); i++) {
+                            if (combo.getItemAt(i).id == previous.id) {
+                                combo.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    }
                 } catch (Exception ex) {
-                    showError("Failed to load faculty: " + ex.getMessage());
+                    showError("Failed to load faculty: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     @Override
     public void refreshData() {
         loadStudentDirectory();
-        loadCourses(cboCourses);
+        loadCourses(cboStudentsCourse, this::loadStudentsInCourse);
+        loadCourses(cboAttendanceCourse, this::loadCourseAttendance);
+        loadCourses(cboResultsCourse, this::loadCourseResults);
         loadFaculty(cboFaculty);
         loadOverallPerformance();
     }
 
-    protected void styleTable(JTable table) {
-        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(UIStyles.SELECTION);
-        table.setSelectionForeground(UIStyles.INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
-        table.getTableHeader().setBackground(UIStyles.PRIMARY);
-        table.getTableHeader().setForeground(UIStyles.INVERSE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(
-                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
-            }
+    private String message(Exception ex) {
+        return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+    }
 
     private static final class PerfStats {
+
         int total;
         int pass;
         int fail;
-        double avg;
+        double average;
+        Object[][] data;
     }
 }
-
-
-

@@ -90,6 +90,10 @@ public class EnrollmentService {
                     conn.setAutoCommit(true);
                 } catch (Exception ignored) {
                 }
+                try {
+                    conn.close();
+                } catch (Exception ignored) {
+                }
             }
         }
     }

@@ -1,33 +1,32 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.util.List;
+import javax.swing.BoxLayout;
 import javax.swing.JPanel;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import model.Faculty;
 import service.FacultyService;
+import ui.components.AppIcon;
+import ui.components.DataCard;
+import ui.components.FormField;
+import ui.components.FormPanel;
+import ui.components.RoundedButton;
+import ui.components.SearchField;
+import ui.components.SectionHeader;
+import ui.components.TableCard;
 import util.AppException;
 import util.DateUtils;
-import util.InputValidator;
-import ui.components.FormField;
-import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
-import ui.components.SectionHeader;
-import util.UIStyles;
 
 /**
- * Faculty management panel: add, view, search, update, delete faculty members.
+ * Faculty management: maintain the teaching staff register and their
+ * departments, designations and specialisations.
  */
 public class FacultyPanel extends BasePanel {
 
@@ -39,7 +38,10 @@ public class FacultyPanel extends BasePanel {
             fAddress, fDob, fDepartment, fDesignation, fSpecialization;
 
     private JTable table;
+    private TableCard tableCard;
+    private SearchField search;
     private int selectedId = -1;
+    private List<Faculty> displayed = List.of();
 
     public FacultyPanel(MainFrame main) {
         super(main);
@@ -48,37 +50,67 @@ public class FacultyPanel extends BasePanel {
     }
 
     private void buildUI() {
-        JPanel header = sectionHeader("Faculty",
-                "Manage faculty members and course assignments.");
+        SectionHeader head = header("Module 03 \u00B7 People", "Faculty",
+                "The teaching roster: departments, designations and specialisations.");
+        add(head, BorderLayout.NORTH);
 
-        JPanel toolbar = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 12, 0));
+        table = buildTable(new Object[0][0],
+                new String[]{"Faculty ID", "Name", "Department"});
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && table.getSelectedRow() >= 0) {
+                loadSelectedRow();
+            }
+        });
+
+        tableCard = tableCard("Faculty register", "Teaching staff currently on record.",
+                table, "No faculty on file",
+                "Add the first faculty member on the right, or clear the search to see everyone.");
+        RoundedButton cardRefresh = iconButton(AppIcon.Glyph.REFRESH, "Reload faculty");
+        cardRefresh.addActionListener(e -> refreshData());
+        tableCard.getCard().addHeaderAction(cardRefresh);
+
+        JPanel body = pageBody();
+
+        JPanel toolbar = new JPanel(new BorderLayout(12, 0));
         toolbar.setOpaque(false);
-        toolbar.setBorder(new EmptyBorder(0, 0, 12, 0));
+        toolbar.setBorder(new EmptyBorder(0, 0, 14, 0));
 
-        JTextField search = new JTextField();
-        search.setFont(UIStyles.BODY);
-        search.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
-        search.setPreferredSize(new Dimension(340, 40));
-        search.setToolTipText("Search by faculty ID, employee ID, name, email or department");
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        left.setOpaque(false);
+        search = new SearchField("Search by ID, name, email or department");
+        search.addActionListener(e -> doSearch(search.getText(), true));
+        RoundedButton searchBtn = new RoundedButton("Search", AppIcon.Glyph.SEARCH);
+        searchBtn.applyOutline();
+        searchBtn.addActionListener(e -> doSearch(search.getText(), true));
+        RoundedButton refresh = new RoundedButton("Refresh", AppIcon.Glyph.REFRESH);
+        refresh.applyGhost();
+        refresh.addActionListener(e -> refreshData());
+        left.add(search);
+        left.add(searchBtn);
+        left.add(refresh);
 
-        RoundedButton btnSearch = new RoundedButton("Search");
-        btnSearch.applyAccent();
-        btnSearch.addActionListener(e -> doSearch(search.getText()));
+        RoundedButton addNew = new RoundedButton("New faculty", AppIcon.Glyph.PLUS);
+        addNew.applyPrimary();
+        addNew.addActionListener(e -> clearForm());
 
-        RoundedButton btnRefresh = new RoundedButton("Refresh");
-        btnRefresh.applyGhost();
-        btnRefresh.addActionListener(e -> refreshData());
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(addNew);
 
-        RoundedButton btnAddNew = new RoundedButton("Add New");
-        btnAddNew.applyPrimary();
-        btnAddNew.addActionListener(e -> clearForm());
+        toolbar.add(left, BorderLayout.WEST);
+        toolbar.add(right, BorderLayout.EAST);
 
-        toolbar.add(new JLabel("  Search:"));
-        toolbar.add(search);
-        toolbar.add(btnSearch);
-        toolbar.add(btnRefresh);
-        toolbar.add(btnAddNew);
+        JPanel split = new JPanel(new BorderLayout(16, 0));
+        split.setOpaque(false);
+        split.add(tableCard, BorderLayout.CENTER);
+        split.add(buildEditor(), BorderLayout.EAST);
 
+        body.add(toolbar, BorderLayout.NORTH);
+        body.add(split, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
+    }
+
+    private JPanel buildEditor() {
         fFacultyId = new FormField("FAC0001");
         fEmployeeId = new FormField("EMP0001");
         fFullName = new FormField("Dr. Anita Sharma");
@@ -90,97 +122,63 @@ public class FacultyPanel extends BasePanel {
         fDesignation = new FormField("Professor");
         fSpecialization = new FormField("Databases");
 
-        RoundedPanel formCard = new RoundedPanel();
-        formCard.setRadius(12);
-        formCard.setShadow(false);
-        formCard.setFill(UIStyles.CARD);
-        formCard.setLayout(new GridBagLayout());
-        formCard.setBorder(new EmptyBorder(20, 20, 20, 20));
+        DataCard editor = card("Faculty details", "Select a row to edit, or enter a new record.");
+        FormPanel form = new FormPanel();
 
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(8, 8, 8, 8);
-        g.anchor = GridBagConstraints.WEST;
-        g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        g.gridx = 0;
-        g.gridy = 0;
+        form.addRow(field("Faculty ID *", fFacultyId, "Unique code, e.g. FAC0001"));
+        form.addRow(field("Employee ID *", fEmployeeId, null));
+        form.addRow(field("Full name *", fFullName, null));
+        form.addRow(field("Email *", fEmail, null));
+        form.addRow(field("Phone", fPhone, null));
+        form.addRow(field("Address", fAddress, null));
+        form.addRow(field("Date of birth", fDob, "yyyy-MM-dd"));
 
-        g.gridwidth = 2;
-        addFormRow(formCard, g, "Faculty ID *", fFacultyId);
-        addFormRow(formCard, g, "Employee ID *", fEmployeeId);
-        addFormRow(formCard, g, "Full Name *", fFullName);
-        addFormRow(formCard, g, "Email *", fEmail);
-        addFormRow(formCard, g, "Phone", fPhone);
-        addFormRow(formCard, g, "Address", fAddress);
-        addFormRow(formCard, g, "Date of Birth (yyyy-MM-dd)", fDob);
-        addFormRow(formCard, g, "Department *", fDepartment);
-        addFormRow(formCard, g, "Designation *", fDesignation);
-        addFormRow(formCard, g, "Specialization *", fSpecialization);
-        g.gridwidth = 1;
+        JPanel pair = new JPanel(new GridLayout(1, 2, 10, 0));
+        pair.setOpaque(false);
+        pair.add(field("Department *", fDepartment, null));
+        pair.add(field("Designation *", fDesignation, null));
+        form.addRow(pair);
+        form.addRow(field("Specialization *", fSpecialization, null), 18);
 
-        JPanel formActions = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        formActions.setOpaque(false);
-        RoundedButton btnSave = new RoundedButton("Save");
-        btnSave.applySuccess();
-        btnSave.addActionListener(e -> doSave());
-        RoundedButton btnUpdate = new RoundedButton("Update");
-        btnUpdate.applyAccent();
-        btnUpdate.addActionListener(e -> doUpdate());
-        RoundedButton btnDelete = new RoundedButton("Delete");
-        btnDelete.applyDanger();
-        btnDelete.addActionListener(e -> doDelete());
-        RoundedButton btnClear = new RoundedButton("Reset");
-        btnClear.applyGhost();
-        btnClear.addActionListener(e -> clearForm());
-        formActions.add(btnSave);
-        formActions.add(btnUpdate);
-        formActions.add(btnDelete);
-        formActions.add(btnClear);
+        JPanel actions = new JPanel(new GridLayout(2, 2, 8, 8));
+        actions.setOpaque(false);
+        RoundedButton save = new RoundedButton("Save", AppIcon.Glyph.SAVE);
+        save.applyPrimary();
+        save.addActionListener(e -> doSave());
+        RoundedButton update = new RoundedButton("Update", AppIcon.Glyph.EDIT);
+        update.applyOutline();
+        update.addActionListener(e -> doUpdate());
+        RoundedButton delete = new RoundedButton("Delete", AppIcon.Glyph.TRASH);
+        delete.applyDanger();
+        delete.addActionListener(e -> doDelete());
+        RoundedButton reset = new RoundedButton("Reset", AppIcon.Glyph.RESET);
+        reset.applyGhost();
+        reset.addActionListener(e -> clearForm());
+        actions.add(save);
+        actions.add(update);
+        actions.add(delete);
+        actions.add(reset);
+        form.addRow(actions, 0);
+        form.addGlue();
 
-        g.gridx = 0;
-        g.gridy++;
-        g.gridwidth = 2;
-        g.anchor = GridBagConstraints.WEST;
-        formCard.add(formActions, g);
+        JScrollPane scroll = scroll(form);
+        scroll.setPreferredSize(new Dimension(342, 0));
+        editor.setBody(scroll);
 
-        JPanel formWrap = new JPanel(new BorderLayout());
-        formWrap.setOpaque(false);
-        formWrap.setPreferredSize(new Dimension(420, 0));
-        formWrap.add(formCard, BorderLayout.NORTH);
-
-        table = new JTable();
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(table);
-
-        table.getSelectionModel().addListSelectionListener(e -> {
-            if (e.getValueIsAdjusting() || table.getSelectedRow() < 0) {
-                return;
-            }
-            loadSelectedRow();
-        });
-
-        JPanel content = new JPanel(new BorderLayout(16, 16));
-        content.setOpaque(false);
-        content.setBorder(new EmptyBorder(0, 20, 20, 20));
-        content.add(formWrap, BorderLayout.WEST);
-        content.add(scroll, BorderLayout.CENTER);
-
-        setLayout(new BorderLayout(0, 0));
-        add(header, BorderLayout.NORTH);
-        add(toolbar, BorderLayout.SOUTH);
-        add(content, BorderLayout.CENTER);
+        JPanel wrap = new JPanel(new BorderLayout());
+        wrap.setOpaque(false);
+        wrap.setPreferredSize(new Dimension(378, 0));
+        wrap.add(editor, BorderLayout.CENTER);
+        return wrap;
     }
 
-    private void addFormRow(JPanel form, GridBagConstraints g, String label, FormField field) {
-        JLabel l = UIStyles.fieldLabel(label);
-        l.setBorder(new EmptyBorder(0, 0, 4, 0));
-        g.gridx = 0;
-        form.add(l, g);
-        g.gridy++;
-        g.gridx = 0;
-        form.add(field, g);
-        g.gridy++;
+    private JPanel strut(int height) {
+        JPanel p = new JPanel();
+        p.setOpaque(false);
+        p.setPreferredSize(new Dimension(0, height));
+        p.setMaximumSize(new Dimension(Integer.MAX_VALUE, height));
+        p.setMinimumSize(new Dimension(0, height));
+        return p;
     }
 
     private void loadSelectedRow() {
@@ -188,40 +186,42 @@ public class FacultyPanel extends BasePanel {
         if (row < 0) {
             return;
         }
-        selectedId = (Integer) table.getValueAt(row, 0);
-        fFacultyId.setText(valueOf(table.getValueAt(row, 1)));
-        fEmployeeId.setText(valueOf(table.getValueAt(row, 2)));
-        fFullName.setText(valueOf(table.getValueAt(row, 3)));
-        fEmail.setText(valueOf(table.getValueAt(row, 4)));
-        fPhone.setText(valueOf(table.getValueAt(row, 5)));
-        fAddress.setText(valueOf(table.getValueAt(row, 6)));
-        fDob.setText(valueOf(table.getValueAt(row, 7)));
-        fDepartment.setText(valueOf(table.getValueAt(row, 8)));
-        fDesignation.setText(valueOf(table.getValueAt(row, 9)));
-        fSpecialization.setText(valueOf(table.getValueAt(row, 10)));
+        Faculty f = displayed.get(table.convertRowIndexToModel(row));
+        selectedId = f.getId();
+        fFacultyId.setText(valueOf(f.getFacultyId()));
+        fEmployeeId.setText(valueOf(f.getEmployeeId()));
+        fFullName.setText(valueOf(f.getFullName()));
+        fEmail.setText(valueOf(f.getEmail()));
+        fPhone.setText(valueOf(f.getPhone()));
+        fAddress.setText(valueOf(f.getAddress()));
+        fDob.setText(f.getDateOfBirth() == null ? "" : DateUtils.display(f.getDateOfBirth()));
+        fDepartment.setText(valueOf(f.getDepartment()));
+        fDesignation.setText(valueOf(f.getDesignation()));
+        fSpecialization.setText(valueOf(f.getSpecialization()));
     }
 
     private String valueOf(Object v) {
         return v == null ? "" : String.valueOf(v);
     }
 
-    private void doSearch(String keyword) {
-        SwingWorker<List<Faculty>, Void> worker = new SwingWorker<List<Faculty>, Void>() {
+    /* ---------- Operations ---------- */
+
+    private void doSearch(String keyword, boolean notify) {
+        new SwingWorker<List<Faculty>, Void>() {
             @Override
             protected List<Faculty> doInBackground() throws Exception {
-                return service.search(keyword);
+                return service.search(keyword == null ? "" : keyword.trim());
             }
 
             @Override
             protected void done() {
                 try {
-                    fillTable(get());
+                    fillTable(get(), notify);
                 } catch (Exception ex) {
-                    showError("Search failed: " + ex.getMessage());
+                    showError("Search failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     private void doSave() {
@@ -229,7 +229,7 @@ public class FacultyPanel extends BasePanel {
             service.create(readFacultyId(), readEmployeeId(), readFullName(), readEmail(),
                     readPhone(), readAddress(), readDob(), readDepartment(),
                     readDesignation(), readSpecialization());
-            showSuccess("Faculty member saved successfully.");
+            showSuccess("Faculty member \u201C" + readFullName() + "\u201D added.");
             clearForm();
             refreshData();
         } catch (AppException ex) {
@@ -239,14 +239,14 @@ public class FacultyPanel extends BasePanel {
 
     private void doUpdate() {
         if (selectedId < 0) {
-            showWarning("Select a faculty member from the table to update.");
+            showWarning("Select a faculty member from the register first.");
             return;
         }
         try {
             service.update(selectedId, readFacultyId(), readEmployeeId(), readFullName(),
                     readEmail(), readPhone(), readAddress(), readDob(), readDepartment(),
                     readDesignation(), readSpecialization());
-            showSuccess("Faculty member updated successfully.");
+            showSuccess("Faculty record updated.");
             clearForm();
             refreshData();
         } catch (AppException ex) {
@@ -256,19 +256,20 @@ public class FacultyPanel extends BasePanel {
 
     private void doDelete() {
         if (selectedId < 0) {
-            showWarning("Select a faculty member from the table to delete.");
+            showWarning("Select a faculty member from the register first.");
             return;
         }
         String name = fFullName.getText();
-        if (!confirm("Delete faculty member \"" + name + "\"?\n"
-                + "Allowed only if no courses are assigned to them.", "Confirm Delete")) {
+        if (!confirmDanger("Delete faculty member \u201C" + name + "\"?\n"
+                + "This is only allowed when no courses are assigned to them.",
+                "Delete faculty member")) {
             return;
         }
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Boolean, Void>() {
             private String error;
 
             @Override
-            protected Boolean doInBackground() throws Exception {
+            protected Boolean doInBackground() {
                 try {
                     service.delete(selectedId);
                     return true;
@@ -282,82 +283,117 @@ public class FacultyPanel extends BasePanel {
             protected void done() {
                 try {
                     if (get()) {
-                        showSuccess("Faculty member deleted.");
+                        showSuccess("Faculty record deleted.");
                         clearForm();
                         refreshData();
                     } else {
                         showError(error);
                     }
                 } catch (Exception ex) {
-                    showError("Delete failed: " + ex.getMessage());
+                    showError("Delete failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
+
+    /* ---------- Helpers ---------- */
 
     private void refreshData() {
-        doSearch("");
+        doSearch("", false);
     }
 
-    private void fillTable(List<Faculty> list) {
-        Object[][] data = new Object[list.size()][11];
+    private void fillTable(List<Faculty> list, boolean notify) {
+        displayed = list;
+        Object[][] data = new Object[list.size()][3];
         for (int i = 0; i < list.size(); i++) {
             Faculty f = list.get(i);
-            data[i] = new Object[] {
-                f.getId(), f.getFacultyId(), f.getEmployeeId(), f.getFullName(),
-                f.getEmail(), f.getPhone(), f.getAddress(),
-                DateUtils.display(f.getDateOfBirth()), f.getDepartment(),
-                f.getDesignation(), f.getSpecialization()
+            data[i] = new Object[]{
+                f.getFacultyId(), f.getFullName(), f.getDepartment()
             };
         }
         replaceTableData(table, data,
-            new String[] { "ID", "Faculty ID", "Employee ID", "Full Name", "Email", "Phone",
-                "Address", "DOB", "Department", "Designation", "Specialization" });
-        if (list.isEmpty()) {
-            showWarning("No faculty members found.");
+                new String[]{"Faculty ID", "Name", "Department"});
+        setColumnWidths(table, 108, 180, 190);
+        tableCard.setSubtitle(list.isEmpty()
+                ? "No records match the current search."
+                : "Teaching staff currently on record.");
+        tableCard.setCount(list.size(), "faculty member");
+        tableCard.sync();
+        if (notify && list.isEmpty()) {
+            showInfo("No faculty match that search.");
+        }
+    }
+
+    private void hideColumns(JTable table, String... names) {
+        for (String name : names) {
+            javax.swing.table.TableColumn column = table.getColumn(name);
+            if (column != null) {
+                table.removeColumn(column);
+            }
         }
     }
 
     private void clearForm() {
         selectedId = -1;
-        fFacultyId.setText(""); fEmployeeId.setText(""); fFullName.setText("");
-        fEmail.setText(""); fPhone.setText(""); fAddress.setText("");
-        fDob.setText(""); fDepartment.setText(""); fDesignation.setText("");
+        fFacultyId.setText("");
+        fEmployeeId.setText("");
+        fFullName.setText("");
+        fEmail.setText("");
+        fPhone.setText("");
+        fAddress.setText("");
+        fDob.setText("");
+        fDepartment.setText("");
+        fDesignation.setText("");
         fSpecialization.setText("");
         table.clearSelection();
+        fFacultyId.requestFocusInWindow();
     }
 
-    private String readFacultyId() { return fFacultyId.getText(); }
-    private String readEmployeeId() { return fEmployeeId.getText(); }
-    private String readFullName() { return fFullName.getText(); }
-    private String readEmail() { return fEmail.getText(); }
-    private String readPhone() { return fPhone.getText(); }
-    private String readAddress() { return fAddress.getText(); }
-    private String readDob() { return fDob.getText(); }
-    private String readDepartment() { return fDepartment.getText(); }
-    private String readDesignation() { return fDesignation.getText(); }
-    private String readSpecialization() { return fSpecialization.getText(); }
+    private String nullToDash(String value) {
+        return value == null || value.isBlank() ? "\u2014" : value;
+    }
 
-    protected void styleTable(JTable table) {
-        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(UIStyles.SELECTION);
-        table.setSelectionForeground(UIStyles.INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
-        table.getTableHeader().setBackground(UIStyles.PRIMARY);
-        table.getTableHeader().setForeground(UIStyles.INVERSE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(
-                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
-            }
+    private String message(Exception ex) {
+        return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+    }
+
+    private String readFacultyId() {
+        return fFacultyId.getText();
+    }
+
+    private String readEmployeeId() {
+        return fEmployeeId.getText();
+    }
+
+    private String readFullName() {
+        return fFullName.getText();
+    }
+
+    private String readEmail() {
+        return fEmail.getText();
+    }
+
+    private String readPhone() {
+        return fPhone.getText();
+    }
+
+    private String readAddress() {
+        return fAddress.getText();
+    }
+
+    private String readDob() {
+        return fDob.getText();
+    }
+
+    private String readDepartment() {
+        return fDepartment.getText();
+    }
+
+    private String readDesignation() {
+        return fDesignation.getText();
+    }
+
+    private String readSpecialization() {
+        return fSpecialization.getText();
+    }
 }
-
-
-
-

@@ -41,7 +41,8 @@ The source code lives under `src/` and is organised into packages:
 | `dao` | `StudentDAO`, `FacultyDAO`, `CourseDAO`, `EnrollmentDAO`, `AttendanceDAO`, `ResultDAO` — persistence |
 | `service` | `StudentService`, `FacultyService`, `CourseService`, `EnrollmentService`, `AttendanceService`, `ResultService`, `GradeService`, `ReportService` — business rules |
 | `db` | `DatabaseConnection` — centralised JDBC connectivity |
-| `ui` | `MainFrame`, `DashboardPanel`, `StudentPanel`, `FacultyPanel`, `CoursePanel`, `EnrollmentPanel`, `AttendancePanel`, `ResultPanel`, `ReportsPanel` |
+| `ui` | `MainFrame`, `DashboardPanel`, `StudentPanel`, `FacultyPanel`, `CoursePanel`, `EnrollmentPanel`, `AttendancePanel`, `ResultPanel`, `ReportsPanel` — screens |
+| `ui.components` | Hand-painted Swing components: cards, tables, buttons, badges, dialogs, toast, side tabs, empty states, icons |
 | `util` | `InputValidator`, `DateUtils`, `UIStyles`, `AppException` |
 
 Layering (separation of concerns):
@@ -49,6 +50,25 @@ Layering (separation of concerns):
 - **Services** enforce validation & business rules and call **DAOs**.
 - **DAOs** hold all SQL (PreparedStatement) and map `ResultSet` rows to models.
 - No SQL appears in Swing event handlers.
+
+### Interface — the "Registrar" design system
+
+The desktop UI is a purpose-built console, not a stock look-and-feel:
+
+- **Palette & type** — parchment canvas (`#F3F1EA`), deep-forest sidebar
+  (`#0D1F19`), emerald primary (`#146B4B`), terracotta accent (`#C2643F`);
+  Georgia for editorial headings, Segoe UI for data.
+- **Hand-painted primitives** — every card, table, button, badge, chevron,
+  toast, dialog and empty state is drawn with Java2D. No image assets, icon
+  fonts or third-party UI libraries are used.
+- **Module layouts** — Students/Faculty/Courses use a register table beside a
+  scrollable editor card; Enrollments/Attendance/Results use a composer band
+  above a ledger; Reports uses a vertical report library with a card stage.
+- **Live data** — dashboard KPIs, counts, subtitles and report tables are
+  queried from MySQL; database work runs on `SwingWorker` so the UI stays
+  responsive.
+- **High-DPI aware** — the frame scales to the desktop transform and the
+  dashboard scrolls when vertical space is tight.
 
 ---
 
@@ -125,7 +145,9 @@ used.
    ```
    mysql -u root -p < sql/schema.sql
    ```
-   This creates `student_academic_management` and all six tables.
+   This creates `student_academic_management` and all six tables. The script is
+   safe to re-run: existing tables and data are preserved. To reset the
+   database, run `DROP DATABASE student_academic_management;` first.
 
 ### Configure connection
 
@@ -160,7 +182,7 @@ rem Create output directory
 mkdir build
 
 rem Compile all sources with the JDBC driver on the classpath
-javac -d build -cp "lib/mysql-connector-j-8.3.0.jar" src\app\*.java src\model\*.java src\dao\*.java src\service\*.java src\db\*.java src\ui\*.java src\util\*.java
+javac -d build -cp "lib/mysql-connector-j-8.3.0.jar" src\app\*.java src\model\*.java src\dao\*.java src\service\*.java src\db\*.java src\ui\*.java src\ui\components\*.java src\util\*.java
 ```
 
 PowerShell equivalent:
@@ -206,44 +228,48 @@ throughout.
 
 ## Testing Checklist & Results
 
-The project was compiled with `javac` (JDK 21) and launched successfully. The
-JDBC driver is on the classpath and the application window opens.
+Verified on Windows 11 with JDK 21 against a **live MySQL 8.4 server** over TCP
+3306 (dedicated `registrar` account). A Swing smoke harness navigated every
+module and captured screenshots, and a service-level lifecycle test exercised
+create → enroll → attendance → result → update → delete.
 
 | # | Acceptance criterion | Status |
 |---|----------------------|--------|
-| 1 | Application launches successfully | ✅ Verified |
-| 2 | Database connection works with valid configuration | ⚠️ Requires MySQL server (not present in this environment) |
-| 3 | Connection failures produce understandable error messages | ✅ Code path implemented (`AppException` with user-friendly message) |
-| 4 | Students/faculty/courses add, display, search, edit, safe delete | ✅ Implemented in DAO/service/UI |
-| 5 | Data persists after close/reopen | ✅ MySQL persistent storage via JDBC |
-| 6 | Duplicate identifiers & enrollments rejected | ✅ Unique constraints + service-level checks |
-| 7 | Invalid inputs rejected with useful messages | ✅ `InputValidator` + service validation |
-| 8 | Enrollment relationships correct | ✅ FKs + service validation |
-| 9 | Attendance entered, updated, calculated accurately | ✅ Documented rule, transactional save |
-| 10 | Marks, percentages, grades calculated correctly | ✅ BigDecimal + `GradeService` |
-| 11 | Invalid marks cannot be stored | ✅ `InputValidator.marks` + service check |
-| 12 | Reports reflect actual DB records | ✅ All reports query MySQL |
-| 13 | Referential integrity maintained | ✅ FK RESTRICT / SET NULL |
+| 1 | Application launches successfully | ✅ Verified (Registrar window, live dashboard) |
+| 2 | Database connection works with valid configuration | ✅ Verified live (`registrar` over TCP 3306) |
+| 3 | Connection failures produce understandable error messages | ✅ Header pill + dialogs (`AppException`) |
+| 4 | Students/faculty/courses add, display, search, edit, safe delete | ✅ Verified live (temporary records created, updated, deleted) |
+| 5 | Data persists after close/reopen | ✅ InnoDB storage; sample data intact across restarts |
+| 6 | Duplicate identifiers & enrollments rejected | ✅ Verified live (duplicate code + active enrollment) |
+| 7 | Invalid inputs rejected with useful messages | ✅ Verified (numeric/date/email/phone codes) |
+| 8 | Enrollment relationships correct | ✅ Verified (roster returns enrollment id, code and name) |
+| 9 | Attendance entered, updated, calculated accurately | ✅ Verified live (ABSENT 0%, PRESENT 100%, LATE 100%) |
+| 10 | Marks, percentages, grades calculated correctly | ✅ Verified live (85% → B, 92% → A) |
+| 11 | Invalid marks cannot be stored | ✅ Verified live (101 and non-numeric rejected) |
+| 12 | Reports reflect actual DB records | ✅ All six report views loaded and captured |
+| 13 | Referential integrity maintained | ✅ FK RESTRICT blocked deleting an enrolled student |
 | 14 | Transactions roll back on failed multi-step ops | ✅ commit/rollback in Enrollment/Attendance/Result services |
-| 15 | Dashboard stats use actual stored data | ✅ `ReportService` queries MySQL |
+| 15 | Dashboard stats use actual stored data | ✅ Live: 3 students, 2 faculty, 3 courses, 5 enrollments, 80%/85% |
 | 16 | UI responsive during DB operations | ✅ `SwingWorker` used for blocking calls |
 | 17 | All five OOP concepts implemented | ✅ See OOP Concepts section |
 | 18 | Compiles & runs with JDK + JDBC driver, no build tool | ✅ Verified (javac + java) |
 
-> **Note on live database tests:** This environment does not have a MySQL server
-> installed, so criteria 2, 4–6, 8–13, 15 could not be executed end-to-end
-> against a live database here. They are implemented and verified by code
-> inspection and compilation; execute them against a local MySQL instance using
-> the checklist above.
+> **Automated evidence:** `UiSmoke` captured every module and all six report
+> views (15 screenshots); `CrudSmoke` completed 40 checks with zero failures.
+> The database was returned to its original sample state (3 students, 2 faculty,
+> 3 courses, 5 enrollments, 3 results, 5 attendance rows).
 
-Representative manual test cases to run with MySQL:
-- Add a student → appears in the table → search by name finds it → edit → delete (blocked if an enrollment exists).
-- Add duplicate student ID / roll number / email → rejected with "already exists".
-- Enter marks above the course maximum → rejected.
+Regression cases covered by the live tests:
+- Add a student → appears in the table → search finds it → edit → delete.
+- Duplicate student ID / roll number / email → rejected with "already exists".
+- Delete a student who has an enrollment → blocked with a clear message.
+- Enter marks above the course maximum, or non-numeric marks → rejected.
 - Enroll the same student in the same course twice (Active) → second attempt rejected.
-- Mark attendance for a course/date → save → re-mark same date → updates (no duplicate).
+- Mark attendance for a course/date → re-mark same date → updates, no duplicates.
+- Save a result twice → the second save updates the existing result.
 - Delete a course that has enrollments → blocked (FK RESTRICT).
-- Stop MySQL server → app shows "Database disconnected" in the header instead of crashing.
+- Stop MySQL server → the header shows "MySQL offline", no crash.
+- Run each report → tables populated from MySQL, not hardcoded.
 
 ---
 
@@ -273,14 +299,22 @@ Student-Academic-and-cource-management/
 │  ├─ service/{Student,Faculty,Course,Enrollment,Attendance,Result,Grade,Report}Service.java
 │  ├─ db/DatabaseConnection.java
 │  ├─ ui/{MainFrame,Dashboard,Student,Faculty,Course,Enrollment,Attendance,Result,Reports}Panel.java
+│  ├─ ui/components/                      (hand-painted Swing design system)
 │  └─ util/{InputValidator,DateUtils,UIStyles,AppException}.java
 ├─ lib/
 │  └─ mysql-connector-j-8.3.0.jar        (MySQL JDBC driver)
 ├─ sql/
 │  ├─ schema.sql                          (DDL: database + 6 tables)
 │  └─ sample-data.sql                     (OPTIONAL seed data)
+├─ diagrams/                              (Cocoon-AI HTML/SVG system diagrams)
+├─ test/
+│  ├─ smoke/CrudSmoke.java                (service lifecycle test)
+│  └─ ui/UiSmoke.java                     (Swing screenshot smoke test)
 ├─ config/
 │  └─ db.properties.example               (connection config template)
+├─ RUN_LOCALLY.bat                        (Windows one-step launcher)
+├─ TESTING.md
+├─ DIAGRAMS.md
 ├─ .gitignore
 └─ README.md
 ```

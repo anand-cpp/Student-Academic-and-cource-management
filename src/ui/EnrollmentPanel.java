@@ -1,9 +1,8 @@
 package ui;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -11,26 +10,26 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JPanel;
-import javax.swing.JLabel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import dao.CourseDAO;
 import model.Enrollment;
 import service.EnrollmentService;
-import util.AppException;
-import util.DateUtils;
+import ui.components.AppComboBox;
+import ui.components.AppIcon;
+import ui.components.DataCard;
 import ui.components.FormField;
 import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
 import ui.components.SectionHeader;
-import ui.components.StatusBadge;
+import ui.components.TableCard;
+import util.AppException;
+import util.DateUtils;
 import util.UIStyles;
 
 /**
- * Enrollment management panel: enroll students in courses, view and remove enrollments.
+ * Enrollment desk: pair a student with a course, record the date, and review
+ * the resulting registrations in one table.
  */
 public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable {
 
@@ -38,113 +37,109 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
 
     private final EnrollmentService service = new EnrollmentService();
 
-    private javax.swing.JComboBox<ComboItem> cboStudents;
-    private javax.swing.JComboBox<ComboItem> cboCourses;
-    private JTextField fEnrollmentDate;
+    private AppComboBox<ComboItem> cboStudents;
+    private AppComboBox<ComboItem> cboCourses;
+    private FormField fEnrollmentDate;
 
     private JTable table;
+    private TableCard tableCard;
 
     public EnrollmentPanel(MainFrame main) {
         super(main);
         buildUI();
         refreshData();
+        loadCombos();
     }
 
     private void buildUI() {
-        JPanel header = sectionHeader("Enrollments",
-                "Enroll students in courses and manage enrollment status.");
+        SectionHeader head = header("Module 05 \u00B7 Registration", "Enrollments",
+                "Pair a student with a course and keep the registration ledger tidy.");
+        add(head, BorderLayout.NORTH);
 
-        RoundedPanel form = new RoundedPanel();
-        form.setRadius(12);
-        form.setShadow(false);
-        form.setFill(UIStyles.CARD);
-        form.setLayout(new GridBagLayout());
-        form.setBorder(new EmptyBorder(20, 20, 20, 20));
+        JPanel body = pageBody();
 
-        GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(8, 8, 8, 8);
-        g.anchor = GridBagConstraints.WEST;
-        g.gridx = 0;
-        g.gridy = 0;
+        body.add(buildComposer(), BorderLayout.NORTH);
 
-        cboStudents = new javax.swing.JComboBox<>();
-        cboCourses = new javax.swing.JComboBox<>();
-        fEnrollmentDate = new JTextField();
-        fEnrollmentDate.setFont(UIStyles.BODY);
-        fEnrollmentDate.setBorder(new javax.swing.border.LineBorder(UIStyles.LINE, 1, true));
+        table = buildTable(new Object[0][0],
+                new String[]{"ID", "Student ID", "Student", "Course", "Status", "Date"});
+
+        tableCard = tableCard("Registration ledger", "All enrollments across the institution.",
+                table, "No enrollments yet",
+                "Use the composer above to register the first student in a course.");
+        tableCard.setCount(0, "enrollment");
+
+        RoundedButton remove = new RoundedButton("Remove", AppIcon.Glyph.TRASH);
+        remove.applyDanger();
+        remove.addActionListener(e -> doRemove());
+        tableCard.getCard().addHeaderAction(remove);
+
+        RoundedButton refresh = iconButton(AppIcon.Glyph.REFRESH, "Reload ledger");
+        refresh.addActionListener(e -> refreshData());
+        tableCard.getCard().addHeaderAction(refresh);
+
+        body.add(tableCard, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
+    }
+
+    private JPanel buildComposer() {
+        DataCard card = card("Create an enrollment",
+                "Choose a student and a course, then confirm the registration date.");
+
+        cboStudents = new AppComboBox<>();
+        cboCourses = new AppComboBox<>();
+        fEnrollmentDate = new FormField("yyyy-MM-dd");
+        fEnrollmentDate.setText(LocalDate.now().toString());
         fEnrollmentDate.setToolTipText("yyyy-MM-dd");
 
-        JLabel lblStud = UIStyles.fieldLabel("Student *");
-        JLabel lblCrs = UIStyles.fieldLabel("Course *");
-        JLabel lblDate = UIStyles.fieldLabel("Enrollment Date *");
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setOpaque(false);
+        form.setBorder(new EmptyBorder(16, 18, 18, 18));
 
-        addGrid(form, g, lblStud, cboStudents);
-        addGrid(form, g, lblCrs, cboCourses);
-        addGrid(form, g, lblDate, fEnrollmentDate);
-
-        RoundedButton btnLoad = new RoundedButton("Load Data");
-        btnLoad.applyPrimary();
-        btnLoad.addActionListener(e -> loadCombos());
-
-        RoundedButton btnEnroll = new RoundedButton("Enroll");
-        btnEnroll.applySuccess();
-        btnEnroll.addActionListener(e -> doEnroll());
-
-        RoundedButton btnRefresh = new RoundedButton("Refresh");
-        btnRefresh.applyGhost();
-        btnRefresh.addActionListener(e -> refreshData());
-
-        RoundedButton btnRemove = new RoundedButton("Remove Selected");
-        btnRemove.applyDanger();
-        btnRemove.addActionListener(e -> doRemove());
-
-        JPanel btns = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 6));
-        btns.setOpaque(false);
-        btns.add(btnLoad);
-        btns.add(btnEnroll);
-        btns.add(btnRefresh);
-        btns.add(btnRemove);
-
-        g.gridx = 0;
-        g.gridy++;
-        g.gridwidth = 4;
-        form.add(btns, g);
-
-        JPanel formWrap = new JPanel(new BorderLayout());
-        formWrap.setOpaque(false);
-        formWrap.add(form, BorderLayout.NORTH);
-
-        table = new JTable();
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.getViewport().setBackground(UIStyles.CARD);
-        styleTable(table);
-
-        JPanel content = new JPanel(new BorderLayout(16, 16));
-        content.setOpaque(false);
-        content.setBorder(new EmptyBorder(0, 20, 20, 20));
-        content.add(formWrap, BorderLayout.NORTH);
-        content.add(scroll, BorderLayout.CENTER);
-
-        setLayout(new BorderLayout(0, 0));
-        add(header, BorderLayout.NORTH);
-        add(content, BorderLayout.CENTER);
-    }
-
-    private void addGrid(JPanel form, GridBagConstraints g, javax.swing.JLabel label, java.awt.Component field) {
-        g.gridx = 0;
-        form.add(label, g);
-        g.gridx = 1;
+        GridBagConstraints g = new GridBagConstraints();
+        g.gridy = 0;
+        g.anchor = GridBagConstraints.NORTHWEST;
         g.fill = GridBagConstraints.HORIZONTAL;
-        g.weightx = 1.0;
-        form.add(field, g);
+        g.insets = new Insets(0, 0, 0, 12);
+
         g.gridx = 0;
-        g.gridy++;
-        g.fill = GridBagConstraints.NONE;
+        g.weightx = 1.0;
+        form.add(field("Student *", cboStudents, null), g);
+
+        g.gridx = 1;
+        g.weightx = 1.0;
+        form.add(field("Course *", cboCourses, null), g);
+
+        g.gridx = 2;
+        g.weightx = 0.34;
+        form.add(field("Enrollment date *", fEnrollmentDate, "yyyy-MM-dd"), g);
+
+        g.gridx = 3;
         g.weightx = 0;
+        g.insets = new Insets(20, 0, 0, 0);
+        g.fill = GridBagConstraints.NONE;
+        g.anchor = GridBagConstraints.NORTHWEST;
+
+        RoundedButton enroll = new RoundedButton("Enroll student", AppIcon.Glyph.PLUS);
+        enroll.applyPrimary();
+        enroll.setPreferredSize(new Dimension(158, 38));
+        enroll.addActionListener(e -> doEnroll());
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        actions.setOpaque(false);
+        actions.add(enroll);
+
+        g.fill = GridBagConstraints.NONE;
+        g.insets = new Insets(20, 0, 0, 0);
+        form.add(actions, g);
+
+        card.setBody(form);
+        return card;
     }
+
+    /* ---------- Loaders ---------- */
 
     private void loadCombos() {
-        SwingWorker<ComboData, Void> worker = new SwingWorker<ComboData, Void>() {
+        new SwingWorker<ComboData, Void>() {
             @Override
             protected ComboData doInBackground() throws Exception {
                 ComboData data = new ComboData();
@@ -157,49 +152,64 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
             protected void done() {
                 try {
                     ComboData d = get();
+                    ComboItem previousStudent = (ComboItem) cboStudents.getSelectedItem();
+                    ComboItem previousCourse = (ComboItem) cboCourses.getSelectedItem();
                     cboStudents.setModel(new javax.swing.DefaultComboBoxModel<>(
                             d.students.toArray(new ComboItem[0])));
                     cboCourses.setModel(new javax.swing.DefaultComboBoxModel<>(
                             d.courses.toArray(new ComboItem[0])));
+                    reselect(cboStudents, previousStudent);
+                    reselect(cboCourses, previousCourse);
                 } catch (Exception ex) {
-                    showError("Failed to load students/courses: " + ex.getMessage());
+                    showError("Failed to load students and courses: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    private java.util.List<ComboItem> loadStudents() throws AppException {
-        java.util.List<ComboItem> list = new java.util.ArrayList<>();
-        dao.StudentDAO dao = new dao.StudentDAO();
-        for (model.Student s : dao.findAll()) {
-            list.add(new ComboItem(s.getId(), s.getStudentId() + " - " + s.getFullName()));
+    private void reselect(AppComboBox<ComboItem> combo, ComboItem item) {
+        if (item == null) {
+            return;
+        }
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            if (combo.getItemAt(i).id == item.id) {
+                combo.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+    private List<ComboItem> loadStudents() throws AppException {
+        List<ComboItem> list = new java.util.ArrayList<>();
+        for (model.Student s : new dao.StudentDAO().findAll()) {
+            list.add(new ComboItem(s.getId(), s.getStudentId() + " \u00B7 " + s.getFullName()));
         }
         return list;
     }
 
-    private java.util.List<ComboItem> loadCourses() throws AppException {
-        java.util.List<ComboItem> list = new java.util.ArrayList<>();
-        CourseDAO dao = new CourseDAO();
-        for (model.Course c : dao.findAll()) {
-            list.add(new ComboItem(c.getId(), c.getCourseCode() + " - " + c.getCourseName()));
+    private List<ComboItem> loadCourses() throws AppException {
+        List<ComboItem> list = new java.util.ArrayList<>();
+        for (model.Course c : new CourseDAO().findAll()) {
+            list.add(new ComboItem(c.getId(), c.getCourseCode() + " \u00B7 " + c.getCourseName()));
         }
         return list;
     }
+
+    /* ---------- Operations ---------- */
 
     private void doEnroll() {
         ComboItem student = (ComboItem) cboStudents.getSelectedItem();
         ComboItem course = (ComboItem) cboCourses.getSelectedItem();
         if (student == null || course == null) {
-            showWarning("Please load data and select both a student and a course.");
+            showWarning("Select both a student and a course first.");
             return;
         }
         String date = fEnrollmentDate.getText();
-        SwingWorker<Integer, Void> worker = new SwingWorker<Integer, Void>() {
+        new SwingWorker<Integer, Void>() {
             private String error;
 
             @Override
-            protected Integer doInBackground() throws Exception {
+            protected Integer doInBackground() {
                 try {
                     return service.enroll(student.id, course.id, date);
                 } catch (AppException ex) {
@@ -213,36 +223,37 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
                 try {
                     int id = get();
                     if (id > 0) {
-                        showSuccess("Enrollment created (id=" + id + ").");
-                        fEnrollmentDate.setText("");
+                        showSuccess("Enrollment #" + id + " created.");
+                        fEnrollmentDate.setText(LocalDate.now().toString());
                         refreshData();
                     } else {
                         showError(error);
                     }
                 } catch (Exception ex) {
-                    showError("Enroll failed: " + ex.getMessage());
+                    showError("Enroll failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     private void doRemove() {
         int row = table.getSelectedRow();
         if (row < 0) {
-            showWarning("Select an enrollment from the table to remove.");
+            showWarning("Select an enrollment in the ledger first.");
             return;
         }
-        int id = (Integer) table.getValueAt(row, 0);
-        if (!confirm("Remove this enrollment? Attendance and results for it must be removed first.",
-                "Confirm Remove")) {
+        int id = ((Number) table.getModel().getValueAt(
+                table.convertRowIndexToModel(row), 0)).intValue();
+        if (!confirmDanger("Remove enrollment #" + id + "?\n"
+                + "Attendance and results attached to it must be removed first.",
+                "Remove enrollment")) {
             return;
         }
-        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+        new SwingWorker<Boolean, Void>() {
             private String error;
 
             @Override
-            protected Boolean doInBackground() throws Exception {
+            protected Boolean doInBackground() {
                 try {
                     service.delete(id);
                     return true;
@@ -256,22 +267,22 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
             protected void done() {
                 try {
                     if (get()) {
-                        showSuccess("Enrollment removed.");
+                        showSuccess("Enrollment #" + id + " removed.");
                         refreshData();
                     } else {
                         showError(error);
                     }
                 } catch (Exception ex) {
-                    showError("Remove failed: " + ex.getMessage());
+                    showError("Remove failed: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
     @Override
     public void refreshData() {
-        SwingWorker<List<Map<String, Object>>, Void> worker = new SwingWorker<List<Map<String, Object>>, Void>() {
+        loadCombos();
+        new SwingWorker<List<Map<String, Object>>, Void>() {
             @Override
             protected List<Map<String, Object>> doInBackground() throws Exception {
                 return service.listAllSummary();
@@ -284,42 +295,41 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
                     Object[][] data = new Object[rows.size()][6];
                     for (int i = 0; i < rows.size(); i++) {
                         Map<String, Object> r = rows.get(i);
-                        data[i] = new Object[] {
+                        data[i] = new Object[]{
                             r.get("id"), r.get("studentId"), r.get("studentName"),
                             r.get("courseCode"), r.get("status"),
                             DateUtils.display((java.time.LocalDate) r.get("enrollmentDate"))
                         };
                     }
-                    table.setModel(new javax.swing.table.DefaultTableModel(
-                            data, new String[] { "ID", "Student ID", "Student", "Course", "Status", "Date" }));
-                    styleTable(table);
+                    replaceTableData(table, data,
+                            new String[]{"ID", "Student ID", "Student", "Course", "Status", "Date"});
+                    hideColumn(table, "ID");
+                    setColumnWidths(table, 115, 190, 190, 95, 105);
+                    tableCard.setCount(rows.size(), "enrollment");
+                    tableCard.setSubtitle(rows.isEmpty()
+                            ? "No registrations recorded yet."
+                            : "All enrollments across the institution.");
+                    tableCard.sync();
                 } catch (Exception ex) {
-                    // ignore
+                    showError("Could not load enrollments: " + message(ex));
                 }
             }
-        };
-        worker.execute();
+        }.execute();
     }
 
-    protected void styleTable(JTable table) {
-        table.setRowHeight(UIStyles.TABLE_ROW_HEIGHT);
-        table.setShowHorizontalLines(false);
-        table.setShowVerticalLines(false);
-        table.setIntercellSpacing(new Dimension(0, 0));
-        table.setSelectionBackground(UIStyles.SELECTION);
-        table.setSelectionForeground(UIStyles.INK);
-        table.setFillsViewportHeight(true);
-        table.getTableHeader().setFont(UIStyles.TABLE_HEADER);
-        table.getTableHeader().setBackground(UIStyles.PRIMARY);
-        table.getTableHeader().setForeground(UIStyles.INVERSE);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.getTableHeader().setBorder(
-                javax.swing.BorderFactory.createMatteBorder(0, 0, 2, 0, UIStyles.PRIMARY));
-        table.getTableHeader().setPreferredSize(new Dimension(0, 36));
-        table.setDefaultRenderer(Object.class, new ui.components.TableRenderer());
-            }
+    private void hideColumn(JTable table, String name) {
+        javax.swing.table.TableColumn column = table.getColumn(name);
+        if (column != null) {
+            table.removeColumn(column);
+        }
+    }
+
+    private String message(Exception ex) {
+        return ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+    }
 
     public static final class ComboItem {
+
         final int id;
         final String label;
 
@@ -335,11 +345,8 @@ public class EnrollmentPanel extends BasePanel implements MainFrame.Refreshable 
     }
 
     private static final class ComboData {
-        java.util.List<ComboItem> students;
-        java.util.List<ComboItem> courses;
+
+        List<ComboItem> students;
+        List<ComboItem> courses;
     }
 }
-
-
-
-

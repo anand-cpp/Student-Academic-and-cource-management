@@ -1,36 +1,100 @@
 package ui.components;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.FontMetrics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 import util.UIStyles;
 
 /**
- * A section header for module panels: title + description + optional action.
+ * Editorial page header: eyebrow, serif title, supporting sentence and an
+ * optional right-aligned action area.
  */
 public class SectionHeader extends JPanel {
 
     private static final long serialVersionUID = 1L;
 
+    private final JLabel eyebrowLabel;
+    private final JLabel titleLabel;
+    private final JLabel subtitleLabel;
+    private final JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+
     public SectionHeader(String title, String description) {
-        setLayout(new java.awt.BorderLayout(8, 4));
         setOpaque(false);
-        setBorder(new javax.swing.border.EmptyBorder(0, 0, 20, 0));
+        setLayout(new GridBagLayout());
+        setBorder(new EmptyBorder(26, 28, 14, 28));
 
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(UIStyles.H2);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+
+        JPanel text = new JPanel();
+        text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+
+        eyebrowLabel = new JLabel(" ");
+        eyebrowLabel.setFont(UIStyles.EYEBROW);
+        eyebrowLabel.setForeground(UIStyles.ACCENT);
+
+        titleLabel = new JLabel(title);
+        titleLabel.setFont(UIStyles.DISPLAY);
         titleLabel.setForeground(UIStyles.INK);
-        add(titleLabel, java.awt.BorderLayout.NORTH);
 
-        if (description != null && !description.isEmpty()) {
-            JLabel descLabel = new JLabel(description);
-            descLabel.setFont(UIStyles.BODY_SM);
-            descLabel.setForeground(UIStyles.MUTED);
-            add(descLabel, java.awt.BorderLayout.SOUTH);
-        }
+        subtitleLabel = new JLabel(description == null ? " " : description);
+        subtitleLabel.setFont(UIStyles.BODY_SM);
+        subtitleLabel.setForeground(UIStyles.MUTED);
+
+        text.add(eyebrowLabel);
+        text.add(Box.createVerticalStrut(5));
+        text.add(titleLabel);
+        text.add(Box.createVerticalStrut(4));
+        text.add(subtitleLabel);
+
+        add(text, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.EAST;
+        actions.setOpaque(false);
+        add(actions, gbc);
     }
 
-    public SectionHeader(String title) {
-        this(title, null);
+    public void setEyebrow(String text) {
+        eyebrowLabel.setText(text == null ? " " : text.toUpperCase());
+        repaint();
+    }
+
+    public void setTitle(String title) {
+        titleLabel.setText(title);
+    }
+
+    public void setSubtitle(String subtitle) {
+        subtitleLabel.setText(subtitle);
+    }
+
+    public void addAction(java.awt.Component component) {
+        actions.add(component);
+        revalidate();
+        repaint();
+    }
+
+    public JLabel getTitleLabel() {
+        return titleLabel;
     }
 }

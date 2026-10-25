@@ -38,6 +38,16 @@ public class ReportService {
         return enrollmentDao.count();
     }
 
+    /** Mean attendance across all recorded sessions; Late counts as attended. */
+    public double averageAttendance() throws AppException {
+        return attendanceDao.averagePercentage();
+    }
+
+    /** Mean percentage across every recorded result. */
+    public double averageAcademicPercentage() throws AppException {
+        return resultDao.averagePercentage();
+    }
+
     public List<Map<String, Object>> studentDirectory() throws AppException {
         return studentDao.findAll().stream().map(s -> {
             Map<String, Object> row = new java.util.HashMap<>();
@@ -52,18 +62,12 @@ public class ReportService {
     }
 
     public List<Map<String, Object>> studentsInCourse(int courseId) throws AppException {
-        return enrollmentDao.findByCourse(courseId).stream().map(e -> {
-            Map<String, Object> row = new java.util.HashMap<>();
-            row.put("enrollmentId", e.getId());
-            row.put("studentId", e.getStudentId());
-            row.put("status", e.getStatus());
-            return row;
-        }).toList();
+        return enrollmentDao.findReportByCourse(courseId);
     }
 
     public List<Map<String, Object>> coursesByFaculty(int facultyId) throws AppException {
         return courseDao.findAll().stream()
-                .filter(c -> facultyId == c.getAssignedFacultyId())
+                .filter(c -> Integer.valueOf(facultyId).equals(c.getAssignedFacultyId()))
                 .map(c -> {
                     Map<String, Object> row = new java.util.HashMap<>();
                     row.put("courseCode", c.getCourseCode());

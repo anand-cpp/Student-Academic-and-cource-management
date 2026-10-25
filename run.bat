@@ -69,7 +69,7 @@ echo "========================================"
 echo "Compiling Java application..."
 echo "========================================"
 if not exist build mkdir build
-javac -d build -cp "lib/mysql-connector-j-8.3.0.jar" src\app\*.java src\model\*.java src\dao\*.java src\service\*.java src\db\*.java src\ui\*.java src\util\*.java
+javac -d build -cp "lib/mysql-connector-j-8.3.0.jar" src\app\*.java src\model\*.java src\dao\*.java src\service\*.java src\db\*.java src\ui\*.java src\ui\components\*.java src\util\*.java
 if %errorlevel% neq 0 (
     echo "ERROR: Compilation failed"
     goto end

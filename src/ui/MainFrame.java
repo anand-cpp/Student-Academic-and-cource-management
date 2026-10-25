@@ -1,33 +1,48 @@
 package ui;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FlowLayout;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import ui.components.AppDialog;
+import ui.components.AppIcon;
+import ui.components.Avatar;
 import ui.components.RoundedButton;
-import ui.components.RoundedPanel;
 import ui.components.SidebarItem;
 import util.UIStyles;
 import db.DatabaseConnection;
 import util.AppException;
 
 /**
- * Main application window.
+ * Main application window — the "Registrar" console.
  *
  * <p>Layout:<br>
- *   WEST   - Sidebar navigation (250px, navy background, active states)<br>
- *   NORTH  - Header (page title, subtitle, DB status, refresh)<br>
- *   CENTER - CardLayout holding every module panel<br>
+ *   WEST   - deep-forest sidebar: brand seal, workspace navigation, database
+ *            health and sign-out<br>
+ *   CENTER - parchment workspace with a slim top bar and a CardLayout holding
+ *            every module page.
  *
- * <p>Database operations run off the EDT so the UI stays responsive.
+ * <p>Database calls run off the EDT; the shell only owns navigation, the
+ * breadcrumb, the database indicator and global refresh.
  */
 public class MainFrame extends JFrame {
 
@@ -36,12 +51,10 @@ public class MainFrame extends JFrame {
     private final JPanel center = new JPanel(new java.awt.CardLayout());
     private final java.awt.CardLayout cardLayout = (java.awt.CardLayout) center.getLayout();
 
-    private final JLabel dbStatusDot = new JLabel("\u25CF");
-    private final JLabel dbStatusText = new JLabel("Checking database...");
-    private final JLabel pageTitle = new JLabel("Dashboard");
-    private final JLabel pageSubtitle = new JLabel("Academic administration overview");
+    private final JLabel breadcrumb = new JLabel("REGISTRAR / DASHBOARD");
+    private final DbStatus dbStatus = new DbStatus();
+    private final java.util.Map<String, SidebarItem> navItems = new java.util.LinkedHashMap<>();
 
-    // Module panels
     private DashboardPanel dashboard;
     private StudentPanel students;
     private FacultyPanel faculty;
@@ -52,155 +65,313 @@ public class MainFrame extends JFrame {
     private ReportsPanel reports;
 
     public MainFrame() {
-        super("Student Academic & Course Management System");
+        super("Registrar \u2014 Student Academic & Course Management");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1366, 768);
-        setMinimumSize(new Dimension(1100, 700));
-        setLocationRelativeTo(null);
-        setLayout(new BorderLayout(0, 0));
 
-        // Root panel with card background
-        JPanel root = new JPanel(new BorderLayout(0, 0));
-        root.setBackground(UIStyles.CARD);
+        java.awt.Rectangle work = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getMaximumWindowBounds();
+        double uiScale = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
+                .getDefaultScreenDevice().getDefaultConfiguration()
+                .getDefaultTransform().getScaleX();
+        if (uiScale <= 0) {
+            uiScale = 1.0;
+        }
+        int workWidth = (int) Math.floor(work.width / uiScale);
+        int workHeight = (int) Math.floor(work.height / uiScale);
+        int width = Math.min(1366, workWidth - 16);
+        int height = Math.min(768, workHeight - 16);
+        width = Math.max(width, Math.min(1040, workWidth));
+        height = Math.max(height, Math.min(640, workHeight));
+        setSize(width, height);
+        setMinimumSize(new Dimension(Math.min(1040, workWidth), Math.min(640, workHeight)));
+        setLocation(work.x + Math.max(0, (workWidth - width) / 2),
+                work.y + Math.max(0, (workHeight - height) / 2));
+
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(UIStyles.CANVAS);
 
         root.add(buildSidebar(), BorderLayout.WEST);
-        root.add(buildHeader(), BorderLayout.NORTH);
-        root.add(center, BorderLayout.CENTER);
 
-        add(root, BorderLayout.CENTER);
+        JPanel workspace = new JPanel(new BorderLayout());
+        workspace.setBackground(UIStyles.CANVAS);
+        workspace.add(buildTopBar(), BorderLayout.NORTH);
+        workspace.add(center, BorderLayout.CENTER);
+
+        center.setBackground(UIStyles.CANVAS);
+        root.add(workspace, BorderLayout.CENTER);
+        setContentPane(root);
 
         initializePanels();
-        registerNavigation();
-
         setVisible(true);
-
-        // Initial database status check (off the EDT)
         refreshDbStatus();
     }
 
-    /* ---------- Sidebar ---------- */
+    /* ---------------------------------------------------------------
+       Sidebar
+       --------------------------------------------------------------- */
 
     private JPanel buildSidebar() {
-        RoundedPanel sidebar = new RoundedPanel();
-        sidebar.setRadius(0);
-        sidebar.setFill(UIStyles.PRIMARY);
-        sidebar.setShadow(false);
-        sidebar.setLayout(new BorderLayout(0, 0));
-        sidebar.setPreferredSize(new Dimension(UIStyles.SIDEBAR_WIDTH, 0));
+        JPanel sidebar = new JPanel() {
+            private static final long serialVersionUID = 1L;
 
-        // Brand section
-        JPanel brand = new JPanel();
-        brand.setBackground(UIStyles.PRIMARY_DARK);
-        brand.setBorder(BorderFactory.createEmptyBorder(24, 20, 24, 20));
-        brand.setLayout(new BorderLayout(8, 4));
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    UIStyles.applyQualityHints(g2);
+                    java.awt.GradientPaint paint = new java.awt.GradientPaint(
+                            0, 0, UIStyles.SIDEBAR_DEEP,
+                            0, getHeight(), UIStyles.SIDEBAR);
+                    g2.setPaint(paint);
+                    g2.fillRect(0, 0, getWidth(), getHeight());
 
-        JLabel appName = new JLabel("Student");
-        appName.setFont(UIStyles.SIDEBAR_BRAND);
-        appName.setForeground(UIStyles.INVERSE);
+                    // Very subtle vignette in the lower corner.
+                    g2.setPaint(new java.awt.RadialGradientPaint(
+                            new java.awt.geom.Point2D.Double(getWidth() * 0.4, getHeight() * 1.05),
+                            Math.max(180f, getHeight() * 0.7f),
+                            new float[]{0f, 1f},
+                            new Color[]{new Color(0x1E, 0x4A, 0x38, 70), new Color(0, 0, 0, 0)}));
+                    g2.fillRect(0, 0, getWidth(), getHeight());
 
-        JLabel sub = new JLabel("Academic System");
-        sub.setFont(UIStyles.CAPTION);
-        sub.setForeground(new Color(148, 163, 184));
-
-        brand.add(appName, BorderLayout.NORTH);
-        brand.add(sub, BorderLayout.SOUTH);
-
-        // Navigation items
-        JPanel nav = new JPanel();
-        nav.setBackground(UIStyles.PRIMARY);
-        nav.setLayout(new java.awt.GridLayout(0, 1, 0, 4));
-        nav.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
-
-        String[][] items = {
-            {"Dashboard", "\u2630", "Dashboard"},
-            {"Students", "\u2709", "Students"},
-            {"Faculty", "\u270A", "Faculty"},
-            {"Courses", "\u2728", "Courses"},
-            {"Enrollments", "\u270D", "Enrollments"},
-            {"Attendance", "\u2705", "Attendance"},
-            {"Results", "\u2714", "Results"},
-            {"Reports", "\u2713", "Reports"},
-            {"Exit", "\u274C", "Exit"}
+                    g2.setColor(UIStyles.SIDEBAR_LINE);
+                    g2.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight());
+                } finally {
+                    g2.dispose();
+                }
+            }
         };
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setPreferredSize(new Dimension(UIStyles.SIDEBAR_WIDTH, 0));
+        sidebar.setOpaque(true);
+        sidebar.setBackground(UIStyles.SIDEBAR);
 
-        for (String[] item : items) {
-            SidebarItem b = new SidebarItem(item[0], item[1]);
-            b.addActionListener((ActionEvent e) -> navigateTo(item[2]));
-            nav.add(b);
-        }
+        sidebar.add(buildBrand());
+        sidebar.add(groupLabel("WORKSPACE"));
 
-        // Version footer
-        JPanel version = new JPanel();
-        version.setBackground(UIStyles.PRIMARY_DARK);
-        version.setBorder(BorderFactory.createEmptyBorder(16, 20, 20, 20));
-        JLabel ver = new JLabel("v1.0.0  \u00B7  JDK 21 + JDBC");
-        ver.setFont(UIStyles.CAPTION);
-        ver.setForeground(new Color(120, 130, 145));
-        version.add(ver);
+        addNav(sidebar, "Dashboard", AppIcon.Glyph.DASHBOARD);
+        addNav(sidebar, "Students", AppIcon.Glyph.STUDENTS);
+        addNav(sidebar, "Faculty", AppIcon.Glyph.FACULTY);
+        addNav(sidebar, "Courses", AppIcon.Glyph.COURSES);
+        addNav(sidebar, "Enrollments", AppIcon.Glyph.ENROLLMENTS);
+        addNav(sidebar, "Attendance", AppIcon.Glyph.ATTENDANCE);
+        addNav(sidebar, "Results", AppIcon.Glyph.RESULTS);
 
-        sidebar.add(brand, BorderLayout.NORTH);
-        sidebar.add(nav, BorderLayout.CENTER);
-        sidebar.add(version, BorderLayout.SOUTH);
+        sidebar.add(groupLabel("INSIGHTS"));
+        addNav(sidebar, "Reports", AppIcon.Glyph.REPORTS);
 
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(buildDbPanel());
+        sidebar.add(buildSignOut());
+        sidebar.add(buildVersion());
         return sidebar;
     }
 
-    /* ---------- Header ---------- */
+    private JPanel buildBrand() {
+        JPanel brand = new JPanel();
+        brand.setOpaque(false);
+        brand.setLayout(new BoxLayout(brand, BoxLayout.X_AXIS));
+        brand.setBorder(new EmptyBorder(24, 22, 20, 18));
+        brand.setAlignmentX(Component.LEFT_ALIGNMENT);
+        brand.setMaximumSize(new Dimension(Integer.MAX_VALUE, 96));
 
-    private JPanel buildHeader() {
-        RoundedPanel header = new RoundedPanel();
-        header.setRadius(0);
-        header.setFill(UIStyles.ACCENT);
-        header.setShadow(false);
-        header.setLayout(new BorderLayout(16, 0));
-        header.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-        header.setPreferredSize(new Dimension(0, UIStyles.HEADER_HEIGHT));
+        JPanel seal = new JPanel() {
+            private static final long serialVersionUID = 1L;
 
-        // Left: title + subtitle
-        JPanel left = new JPanel();
-        left.setBackground(UIStyles.ACCENT);
-        left.setLayout(new BorderLayout(4, 4));
-        pageTitle.setFont(UIStyles.H2);
-        pageTitle.setForeground(UIStyles.INVERSE);
-        pageSubtitle.setFont(UIStyles.BODY_SM);
-        pageSubtitle.setForeground(new Color(209, 213, 221));
-        left.add(pageTitle, BorderLayout.NORTH);
-        left.add(pageSubtitle, BorderLayout.SOUTH);
-
-        // Right: DB status + refresh
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 0));
-        right.setBackground(UIStyles.ACCENT);
-
-        dbStatusDot.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 12));
-        dbStatusDot.setForeground(UIStyles.WARNING);
-        dbStatusText.setFont(UIStyles.BODY_SM);
-        dbStatusText.setForeground(UIStyles.INVERSE);
-
-        RoundedButton refresh = new RoundedButton("Refresh");
-        refresh.applyOutline();
-        refresh.setFont(UIStyles.BUTTON_SM);
-        refresh.addActionListener(e -> {
-            refreshDbStatus();
-            java.awt.EventQueue.invokeLater(() -> {
-                for (java.awt.Component c : center.getComponents()) {
-                    if (c.isVisible() && c instanceof Refreshable) {
-                        ((Refreshable) c).refreshData();
-                    }
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                try {
+                    UIStyles.applyQualityHints(g2);
+                    int d = Math.min(getWidth(), getHeight());
+                    int x = (getWidth() - d) / 2;
+                    int y = (getHeight() - d) / 2;
+                    g2.setColor(UIStyles.PRIMARY);
+                    g2.fillOval(x, y, d, d);
+                    g2.setColor(UIStyles.alpha(UIStyles.SIDEBAR_ACCENT, 120));
+                    g2.setStroke(new BasicStroke(1f));
+                    g2.drawOval(x + 1, y + 1, d - 2, d - 2);
+                    g2.drawOval(x + 5, y + 5, d - 10, d - 10);
+                    g2.setFont(new java.awt.Font("Georgia", java.awt.Font.BOLD, 19));
+                    g2.setColor(Color.WHITE);
+                    FontMetrics fm = g2.getFontMetrics();
+                    String letter = "R";
+                    g2.drawString(letter, x + (d - fm.stringWidth(letter)) / 2,
+                            y + (d - fm.getHeight()) / 2 + fm.getAscent());
+                } finally {
+                    g2.dispose();
                 }
-            });
-        });
+            }
+        };
+        seal.setOpaque(false);
+        seal.setPreferredSize(new Dimension(42, 42));
+        seal.setMinimumSize(new Dimension(42, 42));
+        seal.setMaximumSize(new Dimension(42, 42));
 
-        right.add(dbStatusDot);
-        right.add(dbStatusText);
-        right.add(refresh);
+        JPanel text = new JPanel();
+        text.setOpaque(false);
+        text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 
-        header.add(left, BorderLayout.WEST);
-        header.add(right, BorderLayout.EAST);
+        JLabel name = new JLabel("Registrar");
+        name.setFont(UIStyles.BRAND);
+        name.setForeground(Color.WHITE);
 
-        return header;
+        JLabel sub = new JLabel("ACADEMIC CONSOLE");
+        sub.setFont(UIStyles.EYEBROW);
+        sub.setForeground(UIStyles.SIDEBAR_MUTED);
+
+        text.add(name);
+        text.add(Box.createVerticalStrut(2));
+        text.add(sub);
+
+        brand.add(seal);
+        brand.add(Box.createHorizontalStrut(12));
+        brand.add(text);
+        brand.add(Box.createHorizontalGlue());
+        return brand;
     }
 
-    /* ---------- Panels & navigation ---------- */
+    private JLabel groupLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(UIStyles.SIDEBAR_GROUP);
+        label.setForeground(UIStyles.SIDEBAR_MUTED);
+        label.setBorder(new EmptyBorder(16, 22, 6, 22));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private void addNav(JPanel sidebar, String page, AppIcon.Glyph glyph) {
+        SidebarItem item = new SidebarItem(page, glyph);
+        item.setAlignmentX(Component.LEFT_ALIGNMENT);
+        item.addActionListener((ActionEvent e) -> navigateTo(page));
+        navItems.put(page, item);
+        sidebar.add(item);
+        sidebar.add(Box.createVerticalStrut(2));
+    }
+
+    private JPanel buildDbPanel() {
+        JPanel holder = new JPanel(new BorderLayout());
+        holder.setOpaque(false);
+        holder.setBorder(new EmptyBorder(8, 14, 8, 14));
+        holder.setMaximumSize(new Dimension(Integer.MAX_VALUE, 76));
+        holder.setAlignmentX(Component.LEFT_ALIGNMENT);
+        holder.add(dbStatus, BorderLayout.CENTER);
+        return holder;
+    }
+
+    private JPanel buildSignOut() {
+        JPanel holder = new JPanel(new BorderLayout());
+        holder.setOpaque(false);
+        holder.setBorder(new EmptyBorder(0, 14, 4, 14));
+        holder.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        holder.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        SidebarItem signOut = new SidebarItem("Sign out", AppIcon.Glyph.LOGOUT);
+        signOut.setToolTipText("Close the registrar console");
+        signOut.addActionListener(e -> {
+            boolean leave = AppDialog.confirm(this,
+                    "Leave the registrar?",
+                    "The application will close and any unsaved form changes will be lost.",
+                    "Sign out", true);
+            if (leave) {
+                DatabaseConnection.close();
+                System.exit(0);
+            }
+        });
+        holder.add(signOut, BorderLayout.CENTER);
+        return holder;
+    }
+
+    private JPanel buildVersion() {
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setOpaque(false);
+        footer.setBorder(new EmptyBorder(8, 22, 16, 22));
+        footer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        footer.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel version = new JLabel("v1.0  \u00B7  JDK 21  \u00B7  MySQL + JDBC");
+        version.setFont(UIStyles.CAPTION);
+        version.setForeground(UIStyles.SIDEBAR_MUTED);
+        footer.add(version, BorderLayout.WEST);
+        return footer;
+    }
+
+    /* ---------------------------------------------------------------
+       Top bar
+       --------------------------------------------------------------- */
+
+    private JPanel buildTopBar() {
+        JPanel bar = new JPanel(new BorderLayout(16, 0));
+        bar.setBackground(UIStyles.CANVAS);
+        bar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, UIStyles.LINE),
+                new EmptyBorder(0, UIStyles.PAGE_PADDING, 0, UIStyles.PAGE_PADDING)));
+        bar.setPreferredSize(new Dimension(0, 60));
+
+        breadcrumb.setFont(UIStyles.EYEBROW);
+        breadcrumb.setForeground(UIStyles.MUTED);
+
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        left.setOpaque(false);
+        left.add(breadcrumb);
+        bar.add(left, BorderLayout.WEST);
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 0));
+        right.setOpaque(false);
+
+        JPanel date = new JPanel(new FlowLayout(FlowLayout.LEFT, 7, 0));
+        date.setOpaque(false);
+        JLabel dateIcon = new JLabel(new AppIcon(AppIcon.Glyph.CALENDAR, 14, UIStyles.MUTED));
+        JLabel dateText = new JLabel(DateTimeFormatter.ofPattern("EEE, MMM d, yyyy")
+                .format(LocalDate.now()));
+        dateText.setFont(UIStyles.BODY_SM);
+        dateText.setForeground(UIStyles.MUTED);
+        date.add(dateIcon);
+        date.add(dateText);
+
+        RoundedButton refresh = new RoundedButton("");
+        refresh.setIcon(new AppIcon(AppIcon.Glyph.REFRESH, 15, null));
+        refresh.applyOutline();
+        refresh.setToolTipText("Refresh the current page and database status");
+        refresh.setPreferredSize(new Dimension(38, 38));
+        refresh.addActionListener(e -> {
+            refreshDbStatus();
+            for (Component c : center.getComponents()) {
+                if (c.isVisible() && c instanceof Refreshable r) {
+                    r.refreshData();
+                }
+            }
+        });
+
+        Avatar avatar = new Avatar("Registry Admin", 30, true);
+        JPanel user = new JPanel(new FlowLayout(FlowLayout.LEFT, 9, 0));
+        user.setOpaque(false);
+        user.add(avatar);
+        JLabel role = new JLabel("Registrar");
+        role.setFont(UIStyles.CAPTION_BOLD);
+        role.setForeground(UIStyles.INK);
+        user.add(role);
+
+        right.add(date);
+        right.add(separator());
+        right.add(dbStatus.topPill());
+        right.add(refresh);
+        right.add(separator());
+        right.add(user);
+        bar.add(right, BorderLayout.EAST);
+
+        return bar;
+    }
+
+    private Component separator() {
+        JPanel line = new JPanel();
+        line.setBackground(UIStyles.LINE_STRONG);
+        line.setPreferredSize(new Dimension(1, 22));
+        return line;
+    }
+
+    /* ---------------------------------------------------------------
+       Panels & navigation
+       --------------------------------------------------------------- */
 
     private void initializePanels() {
         dashboard = new DashboardPanel(this);
@@ -222,11 +393,7 @@ public class MainFrame extends JFrame {
         center.add(reports, "Reports");
 
         cardLayout.show(center, "Dashboard");
-        setPageTitle("Dashboard", "Academic administration overview \u2014 live statistics from MySQL.");
-    }
-
-    private void registerNavigation() {
-        // Navigation is wired in buildSidebar via navigateTo(page).
+        setActiveNav("Dashboard");
     }
 
     void navigateTo(String page) {
@@ -235,45 +402,38 @@ public class MainFrame extends JFrame {
             System.exit(0);
         }
         cardLayout.show(center, page);
-        setPageTitle(page, defaultSubtitle(page));
+        setActiveNav(page);
+        breadcrumb.setText("REGISTRAR / " + page.toUpperCase());
 
-        // Refresh the shown panel
-        for (java.awt.Component c : center.getComponents()) {
-            if (c.isVisible() && c instanceof Refreshable) {
-                ((Refreshable) c).refreshData();
+        for (Component c : center.getComponents()) {
+            if (c.isVisible() && c instanceof Refreshable r) {
+                r.refreshData();
             }
         }
         refreshDbStatus();
     }
 
+    private void setActiveNav(String page) {
+        navItems.forEach((name, item) -> item.setActive(name.equals(page)));
+    }
+
     void setPageTitle(String title, String subtitle) {
-        pageTitle.setText(title);
-        pageSubtitle.setText(subtitle);
+        breadcrumb.setText("REGISTRAR / " + title.toUpperCase());
+        setActiveNav(title);
     }
 
-    private String defaultSubtitle(String page) {
-        switch (page) {
-            case "Students": return "Manage student records \u2014 add, search, edit, delete.";
-            case "Faculty": return "Manage faculty members and course assignments.";
-            case "Courses": return "Manage courses, credits, marks, and faculty assignment.";
-            case "Enrollments": return "Enroll students in courses and manage enrollment status.";
-            case "Attendance": return "Mark and track attendance per course and date.";
-            case "Results": return "Enter marks, calculate percentages and grades.";
-            case "Reports": return "Academic reports and performance summaries.";
-            default: return "Academic administration overview \u2014 live statistics from MySQL.";
-        }
-    }
-
-    /* ---------- Database status ---------- */
+    /* ---------------------------------------------------------------
+       Database indicator
+       --------------------------------------------------------------- */
 
     void refreshDbStatus() {
+        dbStatus.setChecking();
         new javax.swing.SwingWorker<Boolean, Void>() {
             @Override
-            protected Boolean doInBackground() throws Exception {
-                try {
-                    DatabaseConnection.getConnection();
-                    return true;
-                } catch (AppException ex) {
+            protected Boolean doInBackground() {
+                try (java.sql.Connection connection = DatabaseConnection.getConnection()) {
+                    return connection.isValid(2);
+                } catch (AppException | java.sql.SQLException ex) {
                     return false;
                 }
             }
@@ -286,15 +446,118 @@ public class MainFrame extends JFrame {
                 } catch (Exception ex) {
                     connected = false;
                 }
-                if (connected) {
-                    dbStatusDot.setForeground(UIStyles.SUCCESS);
-                    dbStatusText.setText("Connected to MySQL");
-                } else {
-                    dbStatusDot.setForeground(UIStyles.DANGER);
-                    dbStatusText.setText("Database disconnected");
-                }
+                dbStatus.setConnected(connected);
             }
         }.execute();
+    }
+
+    /** Sidebar database tile plus the compact top-bar pill. */
+    private static final class DbStatus extends JPanel {
+
+        private static final long serialVersionUID = 1L;
+
+        private final JLabel dot = new JLabel("\u25CF");
+        private final JLabel title = new JLabel("MySQL");
+        private final JLabel state = new JLabel("Checking\u2026");
+        private final JLabel pillDot = new JLabel("\u25CF");
+        private final JLabel pillText = new JLabel("Connecting");
+        private Boolean connected;
+
+        DbStatus() {
+            setOpaque(false);
+            setLayout(new BorderLayout(10, 0));
+            setBorder(new EmptyBorder(11, 12, 11, 12));
+
+            dot.setFont(new java.awt.Font("Segoe UI Symbol", java.awt.Font.PLAIN, 11));
+            dot.setForeground(UIStyles.WARNING);
+
+            title.setFont(UIStyles.CAPTION_BOLD);
+            title.setForeground(Color.WHITE);
+            state.setFont(UIStyles.CAPTION);
+            state.setForeground(UIStyles.SIDEBAR_MUTED);
+
+            JPanel text = new JPanel();
+            text.setOpaque(false);
+            text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
+            text.add(title);
+            text.add(Box.createVerticalStrut(1));
+            text.add(state);
+
+            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            left.setOpaque(false);
+            left.add(dot);
+
+            add(left, BorderLayout.WEST);
+            add(text, BorderLayout.CENTER);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            try {
+                UIStyles.applyQualityHints(g2);
+                g2.setColor(new Color(0x14, 0x2C, 0x23));
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.setColor(UIStyles.SIDEBAR_LINE);
+                g2.setStroke(new BasicStroke(1f));
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                if (connected != null) {
+                    g2.setColor(connected ? UIStyles.SIDEBAR_ACCENT : UIStyles.DANGER);
+                    g2.fillRoundRect(0, 12, 3, getHeight() - 24, 3, 3);
+                }
+            } finally {
+                g2.dispose();
+            }
+        }
+
+        void setChecking() {
+            dot.setForeground(UIStyles.WARNING);
+            state.setText("Checking\u2026");
+            pillDot.setForeground(UIStyles.WARNING);
+            pillText.setText("Connecting");
+        }
+
+        void setConnected(boolean ok) {
+            connected = ok;
+            dot.setForeground(ok ? UIStyles.SIDEBAR_ACCENT : UIStyles.DANGER);
+            state.setText(ok ? "Connected \u00B7 3306" : "Disconnected");
+            pillDot.setForeground(ok ? UIStyles.SUCCESS : UIStyles.DANGER);
+            pillText.setText(ok ? "MySQL connected" : "MySQL offline");
+            repaint();
+        }
+
+        /** Compact pill rendered in the top bar. */
+        Component topPill() {
+            JPanel pill = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0)) {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    try {
+                        UIStyles.applyQualityHints(g2);
+                        g2.setColor(UIStyles.SURFACE);
+                        g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+                        g2.setColor(UIStyles.LINE);
+                        g2.setStroke(new BasicStroke(1f));
+                        g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 20, 20);
+                    } finally {
+                        g2.dispose();
+                    }
+                }
+            };
+            pill.setOpaque(false);
+            pill.setBorder(new EmptyBorder(6, 10, 6, 12));
+
+            pillDot.setFont(new java.awt.Font("Segoe UI Symbol", java.awt.Font.PLAIN, 10));
+            pillDot.setForeground(UIStyles.WARNING);
+            pillText.setFont(UIStyles.CAPTION);
+            pillText.setForeground(UIStyles.MUTED);
+
+            pill.add(pillDot);
+            pill.add(pillText);
+            return pill;
+        }
     }
 
     public static void main(String[] args) {
@@ -305,5 +568,3 @@ public class MainFrame extends JFrame {
         void refreshData();
     }
 }
-
-

@@ -1,109 +1,81 @@
 package ui.components;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Insets;
-import java.awt.RenderingHints;
-import javax.swing.BorderFactory;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.border.MatteBorder;
 import util.UIStyles;
 
 /**
- * A styled text field with floating-label support, focus ring, and error state.
- *
- * <p>States:<br>
- *   default - Line border in LINE color<br>
- *   focused - 2px ACCENT border<br>
- *   error - 2px DANGER border with red text hint
+ * Rounded text input with placeholder text, focus ring and inline error state.
+ * Drawn entirely with Java2D so it matches the console on every platform.
  */
 public class FormField extends JTextField {
 
     private static final long serialVersionUID = 1L;
 
-    private String placeholder;
-    private boolean error = false;
-
-    public FormField() {
-        this("");
-    }
+    private final String placeholder;
+    private boolean focused;
+    private boolean error;
 
     public FormField(String placeholder) {
-        this.placeholder = placeholder;
+        this.placeholder = placeholder == null ? "" : placeholder;
         setFont(UIStyles.BODY);
-        setMargin(new Insets(10, 12, 10, 12));
-        setBorder(new LineBorder(UIStyles.LINE, 1, true));
-        setBackground(UIStyles.CARD);
-
+        setForeground(UIStyles.INK);
+        setCaretColor(UIStyles.PRIMARY);
+        setOpaque(false);
+        setBorder(new EmptyBorder(0, 12, 0, 12));
+        setPreferredSize(new java.awt.Dimension(200, UIStyles.CONTROL_HEIGHT));
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
-                if (!error) {
-                    setBorder(new LineBorder(UIStyles.ACCENT, 2, true));
-                }
+                focused = true;
+                repaint();
             }
 
             @Override
             public void focusLost(FocusEvent e) {
-                if (!error) {
-                    setBorder(new LineBorder(UIStyles.LINE, 1, true));
-                }
+                focused = false;
+                repaint();
             }
         });
     }
 
-    public void setPlaceholder(String placeholder) {
-        this.placeholder = placeholder;
-        repaint();
-    }
-
-    public String getPlaceholder() {
-        return placeholder;
-    }
-
     public void setError(boolean error) {
         this.error = error;
-        if (error) {
-            setBorder(new LineBorder(UIStyles.DANGER, 2, true));
-        } else if (!hasFocus()) {
-            setBorder(new LineBorder(UIStyles.LINE, 1, true));
-        } else {
-            setBorder(new LineBorder(UIStyles.ACCENT, 2, true));
-        }
         repaint();
-    }
-
-    public boolean isError() {
-        return error;
-    }
-
-    public void clearError() {
-        setError(false);
     }
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        if ((getText() == null || getText().isEmpty()) && !hasFocus() && placeholder != null) {
-            Graphics2D g2 = (Graphics2D) g.create();
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
             UIStyles.applyQualityHints(g2);
-            g2.setColor(error ? UIStyles.DANGER : UIStyles.MUTED_LIGHT);
-            g2.setFont(getFont().deriveFont(Font.PLAIN));
-            g2.drawString(placeholder, 12, getHeight() / 2 + g2.getFontMetrics().getAscent() / 2);
+            int w = getWidth();
+            int h = getHeight();
+            int r = UIStyles.RADIUS;
+
+            g2.setColor(UIStyles.SURFACE);
+            g2.fillRoundRect(0, 0, w - 1, h - 1, r, r);
+
+            Color border = error ? UIStyles.DANGER : (focused ? UIStyles.PRIMARY : UIStyles.LINE);
+            g2.setColor(border);
+            g2.setStroke(new BasicStroke(focused || error ? 1.6f : 1f));
+            g2.drawRoundRect(0, 0, w - 1, h - 1, r, r);
+
+            if (getText().isEmpty() && !placeholder.isEmpty()) {
+                g2.setFont(getFont());
+                g2.setColor(UIStyles.MUTED_LIGHT);
+                java.awt.FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(placeholder, 12, (h - fm.getHeight()) / 2 + fm.getAscent());
+            }
+        } finally {
             g2.dispose();
         }
-    }
-
-    @Override
-    public boolean isOpaque() {
-        return true;
+        super.paintComponent(g);
     }
 }

@@ -189,6 +189,31 @@ public class AttendanceDAO {
         return 0;
     }
 
+    /**
+     * Institution-wide attendance percentage.
+     *
+     * <p>Rule: Late counts as attended. Returns 0 when no attendance is recorded.
+     */
+    public double averagePercentage() throws AppException {
+        String sql = "SELECT SUM(CASE WHEN status IN ('PRESENT','LATE') THEN 1 ELSE 0 END) AS attended, "
+                + "COUNT(*) AS total FROM attendance";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                int attended = rs.getInt("attended");
+                int total = rs.getInt("total");
+                if (total == 0) {
+                    return 0.0;
+                }
+                return (double) attended / total * 100.0;
+            }
+        } catch (SQLException ex) {
+            throw new AppException("DB_ERROR", "Failed to calculate average attendance.", ex);
+        }
+        return 0.0;
+    }
+
     /** Course-level attendance summary: present, late, absent, average percentage. */
     public List<Map<String, Object>> courseSummary(int courseId) throws AppException {
         List<Map<String, Object>> list = new ArrayList<>();

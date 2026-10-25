@@ -1,109 +1,82 @@
 package ui.components;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.List;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JButton;
+import javax.swing.border.EmptyBorder;
 import util.UIStyles;
 
 /**
- * A sidebar navigation item with hover and active states.
- *
- * <p>Visual states:<br>
- *   default - transparent background, muted text<br>
- *   hover - slate-50 background, ink text<br>
- *   active - indigo-50 background, indigo text, left accent bar
+ * Sidebar navigation row: custom-painted icon, label, hover and active states.
  */
-public class SidebarItem extends JPanel {
+public class SidebarItem extends JButton {
 
     private static final long serialVersionUID = 1L;
 
-    private JLabel label;
-    private JLabel iconLabel;
-    private JPanel accentBar;
-    private boolean active = false;
-    private final List<ActionListener> listeners = new ArrayList<>();
+    private boolean active;
+    private boolean hover;
+    private final AppIcon.Glyph glyph;
 
-    public SidebarItem(String text, String icon) {
-        setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+    public SidebarItem(String label, AppIcon.Glyph glyph) {
+        super(label);
+        this.glyph = glyph;
+        setFont(UIStyles.SIDEBAR_ITEM);
+        setForeground(UIStyles.SIDEBAR_TEXT);
         setOpaque(false);
-        setBorder(new javax.swing.border.EmptyBorder(12, 16, 12, 16));
-        setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-
-        // Left accent bar (shown when active)
-        accentBar = new JPanel();
-        accentBar.setBackground(UIStyles.ACCENT);
-        accentBar.setOpaque(true);
-        accentBar.setVisible(false);
-
-        // Icon
-        iconLabel = new JLabel(icon);
-        iconLabel.setFont(new Font("Segoe UI Symbol", Font.PLAIN, 18));
-        iconLabel.setForeground(UIStyles.MUTED);
-        iconLabel.setPreferredSize(new Dimension(24, 24));
-
-        // Label
-        label = new JLabel(text);
-        label.setFont(UIStyles.SIDEBAR_ITEM);
-        label.setForeground(UIStyles.MUTED);
-
-        add(accentBar);
-        add(iconLabel);
-        add(label);
-
-        // Hover effects
-        addMouseListener(new java.awt.event.MouseAdapter() {
+        setContentAreaFilled(false);
+        setBorderPainted(false);
+        setFocusPainted(false);
+        setHorizontalAlignment(LEFT);
+        setBorder(new EmptyBorder(0, 44, 0, 12));
+        setPreferredSize(new Dimension(0, 42));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setRolloverEnabled(true);
+        addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                if (!active) {
-                    setBackground(UIStyles.CARD_HOVER);
-                    label.setForeground(UIStyles.INK);
-                    iconLabel.setForeground(UIStyles.TEXT_BODY);
-                }
+            public void mouseEntered(MouseEvent e) {
+                hover = true;
+                repaint();
             }
 
             @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                if (!active) {
-                    setBackground(null);
-                    label.setForeground(UIStyles.MUTED);
-                    iconLabel.setForeground(UIStyles.MUTED);
-                }
-            }
-
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                setActive(true);
-                for (ActionListener l : listeners) {
-                    l.actionPerformed(new ActionEvent(SidebarItem.this, ActionEvent.ACTION_PERFORMED, null));
-                }
+            public void mouseExited(MouseEvent e) {
+                hover = false;
+                repaint();
             }
         });
     }
 
-    public void addActionListener(ActionListener listener) {
-        listeners.add(listener);
+    /** Backwards-compatible constructor used by older code. */
+    public SidebarItem(String label, String ignoredGlyph) {
+        this(label, glyphFor(label));
+    }
+
+    private static AppIcon.Glyph glyphFor(String label) {
+        return switch (label) {
+            case "Dashboard" -> AppIcon.Glyph.DASHBOARD;
+            case "Students" -> AppIcon.Glyph.STUDENTS;
+            case "Faculty" -> AppIcon.Glyph.FACULTY;
+            case "Courses" -> AppIcon.Glyph.COURSES;
+            case "Enrollments" -> AppIcon.Glyph.ENROLLMENTS;
+            case "Attendance" -> AppIcon.Glyph.ATTENDANCE;
+            case "Results" -> AppIcon.Glyph.RESULTS;
+            case "Reports" -> AppIcon.Glyph.REPORTS;
+            case "Exit" -> AppIcon.Glyph.LOGOUT;
+            default -> AppIcon.Glyph.SPARK;
+        };
     }
 
     public void setActive(boolean active) {
         this.active = active;
-        if (active) {
-            setBackground(UIStyles.ACCENT_LIGHT);
-            label.setForeground(UIStyles.ACCENT);
-            iconLabel.setForeground(UIStyles.ACCENT);
-            accentBar.setVisible(true);
-        } else {
-            setBackground(null);
-            label.setForeground(UIStyles.MUTED);
-            iconLabel.setForeground(UIStyles.MUTED);
-            accentBar.setVisible(false);
-        }
+        revalidate();
         repaint();
     }
 
@@ -111,8 +84,44 @@ public class SidebarItem extends JPanel {
         return active;
     }
 
-    public void setLabel(String text) {
-        label.setText(text);
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        try {
+            UIStyles.applyQualityHints(g2);
+            int w = getWidth();
+            int h = getHeight();
+
+            if (active) {
+                g2.setColor(UIStyles.SIDEBAR_ACTIVE);
+                g2.fillRoundRect(6, 0, w - 12, h, 10, 10);
+
+                g2.setColor(UIStyles.SIDEBAR_ACCENT);
+                g2.fillRoundRect(6, 11, 3, h - 22, 3, 3);
+            } else if (hover) {
+                g2.setColor(UIStyles.SIDEBAR_HOVER);
+                g2.fillRoundRect(6, 0, w - 12, h, 10, 10);
+            }
+
+            Color fg = active ? Color.WHITE : (hover ? Color.WHITE : UIStyles.SIDEBAR_TEXT);
+            Color iconColor = active ? UIStyles.SIDEBAR_ACCENT
+                    : (hover ? UIStyles.SIDEBAR_TEXT : UIStyles.SIDEBAR_MUTED);
+
+            new AppIcon(glyph, 18, iconColor, 1.6f).paintIcon(this, g2, 20, (h - 18) / 2);
+
+            g2.setFont(getFont());
+            g2.setColor(fg);
+            FontMetrics fm = g2.getFontMetrics();
+            String text = getText();
+            g2.drawString(text, 44, (h - fm.getHeight()) / 2 + fm.getAscent());
+
+            if (active) {
+                g2.setColor(UIStyles.alpha(UIStyles.SIDEBAR_ACCENT, 90));
+                g2.setStroke(new BasicStroke(1f));
+                g2.drawRoundRect(6, 0, w - 12, h - 1, 10, 10);
+            }
+        } finally {
+            g2.dispose();
+        }
     }
 }
-

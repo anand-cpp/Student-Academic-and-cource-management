@@ -255,6 +255,62 @@ public class EnrollmentDAO {
         return list;
     }
 
+    /** Active roster for a course: enrollment id, student code and full name. */
+    public List<Map<String, Object>> findRoster(int courseId) throws AppException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT e.id AS enrollment_id, s.student_id AS student_code, "
+                + "s.full_name AS student_name "
+                + "FROM enrollments e "
+                + "JOIN students s ON s.id = e.student_id "
+                + "WHERE e.course_id = ? AND e.status = 'Active' "
+                + "ORDER BY s.full_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, courseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("enrollmentId", rs.getInt("enrollment_id"));
+                    row.put("studentId", rs.getString("student_code"));
+                    row.put("studentName", rs.getString("student_name"));
+                    list.add(row);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new AppException("DB_ERROR", "Failed to load the course roster.", ex);
+        }
+        return list;
+    }
+
+    /** Report rows for one course: enrollment, student code/name, date and status. */
+    public List<Map<String, Object>> findReportByCourse(int courseId) throws AppException {
+        List<Map<String, Object>> list = new ArrayList<>();
+        String sql = "SELECT e.id AS enrollment_id, s.student_id AS student_code, "
+                + "s.full_name AS student_name, e.enrollment_date, e.status "
+                + "FROM enrollments e "
+                + "JOIN students s ON s.id = e.student_id "
+                + "WHERE e.course_id = ? "
+                + "ORDER BY s.full_name";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, courseId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Map<String, Object> row = new HashMap<>();
+                    row.put("enrollmentId", rs.getInt("enrollment_id"));
+                    row.put("studentCode", rs.getString("student_code"));
+                    row.put("studentName", rs.getString("student_name"));
+                    row.put("enrollmentDate", toLocalDate(rs.getDate("enrollment_date")));
+                    row.put("status", rs.getString("status"));
+                    list.add(row);
+                }
+            }
+        } catch (SQLException ex) {
+            throw new AppException("DB_ERROR", "Failed to load the course enrollment report.", ex);
+        }
+        return list;
+    }
+
     /** Join summary: enrollment with student name and course code. */
     public List<Map<String, Object>> findAllSummary() throws AppException {
         List<Map<String, Object>> list = new ArrayList<>();
