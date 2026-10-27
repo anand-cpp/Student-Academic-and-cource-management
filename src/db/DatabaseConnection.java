@@ -15,9 +15,9 @@ import util.AppException;
  * Centralized database connectivity.
  *
  * <p>This is the single place where a JDBC {@link Connection} is created. All
- * DAO classes obtain connections from here, which avoids opening and closing
- * physical connections repeatedly and keeps credentials and the URL in one
- * configurable location.
+ * DAO classes obtain connections from here, which keeps the URL and
+ * credentials in one configurable location and centralizes driver loading and
+ * error translation.
  *
  * <h2>Configuration</h2>
  * <p>The driver reads {@code config/db.properties} from the working directory.
@@ -26,11 +26,12 @@ import util.AppException;
  * template and create your own {@code config/db.properties} locally.
  *
  * <h2>Connection handling</h2>
- * <p>A single connection is reused and validated before each use. If it is
- * closed or invalid (for example after a MySQL restart), a fresh connection is
- * established automatically. Callers should still use try-with-resources for
- * {@link PreparedStatement} and {@link ResultSet}; the shared Connection itself
- * is managed here.
+ * <p>Each call opens an independent connection. This keeps background
+ * {@code SwingWorker} tasks safe: a JDBC connection is not thread-safe, so
+ * sharing one instance across concurrent queries would corrupt results. The
+ * caller owns the connection and closes it with try-with-resources (DAOs) or
+ * in a finally block after commit/rollback (services).
+ * Pooling can be introduced behind this method without changing DAO code.
  */
 public class DatabaseConnection {
 

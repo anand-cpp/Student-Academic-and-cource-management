@@ -29,7 +29,7 @@ import util.UIStyles;
  * Student management: search the register, add a record, or select a row to
  * update and delete. The table and the editor share one page.
  */
-public class StudentPanel extends BasePanel {
+public class StudentPanel extends BasePanel implements MainFrame.Refreshable {
 
     private static final long serialVersionUID = 1L;
 
@@ -302,7 +302,8 @@ public class StudentPanel extends BasePanel {
 
     /* ---------- Helpers ---------- */
 
-    private void refreshData() {
+    @Override
+    public void refreshData() {
         doSearch("", false);
     }
 

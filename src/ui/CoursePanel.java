@@ -29,7 +29,7 @@ import util.UIStyles;
 /**
  * Course catalogue: codes, credits, assessment bounds and faculty assignment.
  */
-public class CoursePanel extends BasePanel {
+public class CoursePanel extends BasePanel implements MainFrame.Refreshable {
 
     private static final long serialVersionUID = 1L;
 
@@ -318,7 +318,8 @@ public class CoursePanel extends BasePanel {
 
     /* ---------- Helpers ---------- */
 
-    private void refreshData() {
+    @Override
+    public void refreshData() {
         doSearch("", false);
     }
 

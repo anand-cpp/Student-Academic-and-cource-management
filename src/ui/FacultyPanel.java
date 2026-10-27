@@ -28,7 +28,7 @@ import util.DateUtils;
  * Faculty management: maintain the teaching staff register and their
  * departments, designations and specialisations.
  */
-public class FacultyPanel extends BasePanel {
+public class FacultyPanel extends BasePanel implements MainFrame.Refreshable {
 
     private static final long serialVersionUID = 1L;
 
@@ -298,7 +298,8 @@ public class FacultyPanel extends BasePanel {
 
     /* ---------- Helpers ---------- */
 
-    private void refreshData() {
+    @Override
+    public void refreshData() {
         doSearch("", false);
     }
 
