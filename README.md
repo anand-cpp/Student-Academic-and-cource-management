@@ -169,6 +169,14 @@ To explore the UI with pre-loaded records (against a fresh/empty database):
 mysql -u root -p student_academic_management < sql/sample-data.sql
 ```
 
+To add a larger, coherent demo batch on top of the sample data:
+```
+mysql -u root -p student_academic_management < sql/example-data.sql
+```
+This adds 9 students, 4 faculty, 6 courses, 31 enrollments, 8 results and
+three extra attendance dates for every enrollment. It does not delete existing
+rows; run it once (fixed identifiers make a second run stop on a duplicate key).
+
 ---
 
 ## Build & Run
